@@ -7,7 +7,7 @@ add_compile_options(-std=c++11)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs geometry_msgs tf2 tf2_ros usv_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs geometry_msgs tf2 tf2_ros usv_msgs message_generation)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -42,11 +42,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs geometry_msgs tf2 tf2_ro
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  usv_pose.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -63,10 +62,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs geometry_msgs tf2 tf2_ro
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -102,6 +101,7 @@ catkin_package(
 #  LIBRARIES guidance
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
 )
 
 ###########
@@ -199,5 +199,13 @@ add_executable(guidance_node
 )
 add_dependencies(guidance_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(guidance_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(pose_tf_usv
+  src/pose_tf_usv.cpp
+)
+add_dependencies(pose_tf_usv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(pose_tf_usv
   ${catkin_LIBRARIES}
 )

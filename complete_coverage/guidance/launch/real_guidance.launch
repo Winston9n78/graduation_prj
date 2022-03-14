@@ -42,12 +42,14 @@
     <param name="max_speed_turn" value="0.6" />
     <param name="min_speed" value="0.4" />
   </node>
+  <node name="guidance_node" pkg="guidance" type="pose_tf_usv" output="screen"/>
 
   <node name="otter_control_node" pkg="otter_control" type="controller" output="screen"/>
+  <node name="otter_parameter_node" pkg="otter_control" type="param_set" output="screen"/>
   <!--需要加一个guidance节点计算LOS需要的参数-->
   <!--需要加一个controler节点计算推进器的参数
   <node name="rosserial_node" pkg="rosserial_python" type="serial_node.py" output="screen"/>
   -->
-  <node name="at9s_node" pkg="at9s_con" type="at9s" output="screen"/>
+  <!-- <node name="at9s_node" pkg="at9s_con" type="at9s" output="screen"/> -->
 
 </launch>

@@ -10,30 +10,6 @@
 
 #include <usv_msgs/SpeedCourse.h>
 
-#include <nlink_parser/LinktrackAnchorframe0.h>
-
-double x_0;
-double y_0;
-double x_1;
-double y_1;
-double heading_angle;
-double u = 1;
-
-
-
-void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg){
-
-  x_0 = msg.nodes[0].pos_3d[0];
-  y_0 = msg.nodes[0].pos_3d[1];
-  x_1 = msg.nodes[1].pos_3d[0];
-  y_1 = msg.nodes[1].pos_3d[1];
-
-  double delta_y = msg.nodes[0].pos_3d[1] - msg.nodes[1].pos_3d[1];
-  double delta_x = msg.nodes[0].pos_3d[0] - msg.nodes[1].pos_3d[0];
-
-  heading_angle = (atan2(delta_y, delta_x) / 3.14) * 180;
-
-}
 
 
 namespace otter_coverage
@@ -64,9 +40,12 @@ Guidance::Guidance()
   goal_point_pub =
       nh.advertise<geometry_msgs::PoseStamped>("goal_point", 1000);
 
+  usv_pose_pub = 
+      nh.advertise<guidance::usv_pose>("usv/pose",1000); 
+
   //订阅角度
   ros::Subscriber sub =
-      nh.subscribe("/nlink_linktrack_anchorframe0", 1000, tagframe0Callback);
+      nh.subscribe("/nlink_linktrack_anchorframe0", 1000, &Guidance::tagframe0Callback, this);
 
   // tf2_ros::Buffer tfBuffer;
   // tf2_ros::TransformListener tfListener(tfBuffer);
@@ -91,7 +70,7 @@ Guidance::Guidance()
 
       if(dist(x_0, y_0, m_path[i+2], m_path[i+3]) < 0.8){
 
-        if(i != 6) i+=2;
+        if(i != (point_number-4)) i+=2;
         else{
           
           // u = 1;//停船
@@ -110,8 +89,18 @@ Guidance::Guidance()
     goal_point_.pose.position.x = m_path[i+2];
     goal_point_.pose.position.y = m_path[i+3];
     goal_point_pub.publish(goal_point_);
-
     followPath(x_0, y_0, heading_angle, m_path[i+0], m_path[i+1], m_path[i+2], m_path[i+3]);
+
+    //发布两个点的坐标到tf坐标系中，可以在rviz中显示
+    usv_pose.x = x_0;
+    usv_pose.y = y_0;
+    usv_pose.theta = heading_angle;
+
+    usv_pose.x2 = x_1;
+    usv_pose.y2 = y_1;
+    usv_pose.theta2 = heading_angle;
+
+    usv_pose_pub.publish(usv_pose);
 
     ros::spinOnce();
     rate.sleep();
@@ -122,14 +111,28 @@ Guidance::~Guidance() {}
 
 void Guidance::set_v_callback(const std_msgs::Float32& msg){
 
-  u = msg.data;
+  // u = msg.data;
+
+}
+
+void Guidance::tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg){
+
+  x_0 = msg.nodes[0].pos_3d[0];
+  y_0 = msg.nodes[0].pos_3d[1];
+  x_1 = msg.nodes[1].pos_3d[0];
+  y_1 = msg.nodes[1].pos_3d[1];
+
+  double delta_y = msg.nodes[0].pos_3d[1] - msg.nodes[1].pos_3d[1];
+  double delta_x = msg.nodes[0].pos_3d[0] - msg.nodes[1].pos_3d[0];
+
+  heading_angle = (atan2(delta_y, delta_x) / 3.14) * 180;
 
 }
 
 void Guidance::path_callback(const std_msgs::Float64MultiArray& msg){
 
-  for(int i =0; i < 10; i++)
-    m_path[i] = msg.data[i];
+  // for(int i =0; i < 10; i++)
+  //   m_path[i] = msg.data[i];
 
 }
 

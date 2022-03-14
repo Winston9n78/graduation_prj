@@ -6,6 +6,10 @@
 #include <nav_msgs/Path.h>
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
+#include "guidance/usv_pose.h"
+#include <nlink_parser/LinktrackAnchorframe0.h>
+
+#define point_number 5*2 //路径相关
 
 namespace otter_coverage
 {
@@ -28,13 +32,20 @@ namespace otter_coverage
     void set_v_callback(const std_msgs::Float32& msg);
     void path_callback(const std_msgs::Float64MultiArray& msg);
 
+    void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg);
+
+    void path_set();
+
     std::vector<geometry_msgs::PoseStamped>::iterator iterator_path;
 
-    double m_path[5*2];
+    double m_path[point_number];
+    double u = 1; //初始值，应该算出来
 
     ros::Publisher m_controllerPub;
 
     ros::Publisher goal_point_pub;
+
+    ros::Publisher usv_pose_pub;
 
     geometry_msgs::PoseStamped Point_goal, Point_start;
 
@@ -52,6 +63,14 @@ namespace otter_coverage
     double m_maxSpeed;
     double m_maxSpeedTurn;
     double m_minSpeed;
+
+    double x_0;
+    double y_0;
+    double x_1;
+    double y_1;
+    double heading_angle;
+
+    guidance::usv_pose usv_pose;
   };
 
 } // namespace otter_coverage

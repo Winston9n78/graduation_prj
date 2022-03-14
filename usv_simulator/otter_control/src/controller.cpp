@@ -31,11 +31,6 @@ OtterController::OtterController() : T(3, 2)
   ros::Subscriber sub_imu = nh.subscribe("imu", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
   // ros::Subscriber sub_voltage = nh.subscribe("voltage", 1000, &OtterController::voltage_Callback, this);
 //3400 14v
-  ros::Subscriber sub_v = nh.subscribe("velocity_pid_parameter", 1000, &OtterController::v_parameter_Callback, this);
-  ros::Subscriber sub_t = nh.subscribe("turning_pid_parameter", 1000, &OtterController::t_parameter_Callback, this);
-  ros::Subscriber sub_k = nh.subscribe("keyboard_control", 1000, &OtterController::keyboard_Callback, this);
-  ros::Subscriber sub_c = nh.subscribe("connect_pid_parameter", 1000, &OtterController::c_parameter_Callback, this);
-  ros::Subscriber sub_s = nh.subscribe("stick_pid_parameter", 1000, &OtterController::s_parameter_Callback, this);
   ros::Subscriber sub_ariltag = nh.subscribe("/tag_detections", 1, &OtterController::apriltag_Callback, this);
 
   ros::Subscriber goal_Sub = nh.subscribe("goal_point", 1000, &OtterController::setPoint, this); //从这个话题中得到一个坐标，然后回调，存到标准类型的向量里，然后使用。
@@ -93,8 +88,8 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "当前角度：" << heading_angle << std::endl;
     std::cout << "期望角度： " << psi_d << std::endl;
 
-    std::cout << "当前速度：" << velocity << std::endl;
-    std::cout << "期望速度：" << u_d << std::endl;
+    std::cout << "当前速度：" << velocity << std::endl; //目前直接给,在.h文件中，应该直接给出来
+    std::cout << "期望速度：" << u_d << std::endl;//发布的u， velocity
 
     if(!flag_missed_target) std::cout << "对接进行中......" << std::endl;
     else std::cout << "未检测到目标" << std::endl;
@@ -213,8 +208,8 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
 
     //不到目标是偏差等于0，不输出
     connect_pwm_y = - kp_con * y_error_connect - ki_con * y_integral;
-    connect_pwm_x = - kp_con * x_error_connect - ki_con * x_integral;
-    connect_pwm_orientation =  kp_con * 7 * orientation_error + ki_con * orientation_integral;
+    connect_pwm_x = - kp_con * x_error_connect - ki_con * x_integral; //尝试用速度去控制应该更好，就不需要额外设置调节前进回退的参数
+    connect_pwm_orientation =  kp_con_orient * orientation_error + ki_con_orient * orientation_integral;
 
     flag_missed_target = false;
   }
@@ -323,37 +318,6 @@ void OtterController::voltage_Callback(const std_msgs::Float32& msg){
 
   voltage = msg.data;
   // std::cout <<angular_velocity_z <<std::endl;
-
-}
-
-void OtterController::v_parameter_Callback(const std_msgs::Float64MultiArray& msg){
-
-  Kp_u = msg.data[0];
-  Ki_u = msg.data[1];
-
-}
-
-void OtterController::t_parameter_Callback(const std_msgs::Float64MultiArray& msg){
-
-  Kp_psi = msg.data[0];
-  Ki_psi = msg.data[1];
-  Kd_psi = msg.data[2];
-
-}
-
-void OtterController::c_parameter_Callback(const std_msgs::Float64MultiArray& msg){
-
-  kp_con = msg.data[0];
-  ki_con = msg.data[1];
-  kd_con = msg.data[2];
-
-}
-
-void OtterController::s_parameter_Callback(const std_msgs::Float64MultiArray& msg){
-
-  kp_stick = msg.data[0];
-  ki_stick = msg.data[1];
-  kd_stick = msg.data[2];
 
 }
 

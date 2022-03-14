@@ -32,10 +32,7 @@ private:
   void speedCallback(const geometry_msgs::Vector3Stamped& msg);
   void imuCallback(const sensor_msgs::Imu& msg);
   double getYaw();
-  void v_parameter_Callback(const std_msgs::Float64MultiArray& msg);
-  void t_parameter_Callback(const std_msgs::Float64MultiArray& msg);
-  void c_parameter_Callback(const std_msgs::Float64MultiArray& msg);
-  void s_parameter_Callback(const std_msgs::Float64MultiArray& msg);
+
   void imu_Callback(const sensor_msgs::Imu& msg);
   void voltage_Callback(const std_msgs::Float32& msg);
   void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg);
@@ -45,7 +42,7 @@ private:
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
 
   void setPoint(const geometry_msgs::PoseStamped& point);
-
+  void set_param();
   void latching_algorithm();
 
   // Heading controller
@@ -65,7 +62,8 @@ private:
   double kp_con = 0;
   double ki_con = 0;
   double kd_con = 0;
-
+  double kp_con_orient = 0;
+  double ki_con_orient = 0;
   //点保持参数
   double kp_stick = 0;
   double ki_stick = 0;
