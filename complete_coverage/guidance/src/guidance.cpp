@@ -10,8 +10,6 @@
 
 #include <usv_msgs/SpeedCourse.h>
 
-
-
 namespace otter_coverage
 {
 
@@ -50,14 +48,18 @@ Guidance::Guidance()
   // tf2_ros::Buffer tfBuffer;
   // tf2_ros::TransformListener tfListener(tfBuffer);
 
-
   ros::Rate rate(10.0);
   while (nh.ok())
   {
+    
+    std::string str;
+    ros::param::get("/OtterController/path_point", str);
+    // std::cout << str << std::endl;
+    GetFloat(str, m_path);//路径点数变多时对应修改point_num, 在stof中
+    // std::cout << m_path[0] << std::endl;
     /*
     在这里订阅UBW进行计算，替换上面三个角度
     */
-
     //路径方向的切换与
     // std::vector<geometry_msgs::PoseStamped>::iterator closest;
     // for(auto it = m_path.poses.begin(); it != m_path.poses.end(); it++){

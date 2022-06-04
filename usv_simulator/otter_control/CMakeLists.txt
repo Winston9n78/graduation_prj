@@ -23,10 +23,10 @@ add_dependencies(controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTE
 target_link_libraries(controller ${catkin_LIBRARIES})
 
 
-add_executable(param_set
-  include/otter_control/controller.h
-  src/param_server.cpp
-  )
-add_dependencies(param_set ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(param_set ${catkin_LIBRARIES})
+# add_executable(param_set
+#   include/otter_control/controller.h
+#   src/param_server.cpp
+#   )
+# add_dependencies(param_set ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# target_link_libraries(param_set ${catkin_LIBRARIES})
 

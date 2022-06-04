@@ -19,12 +19,17 @@
 
 #include <geometry_msgs/PoseStamped.h>
 
+#include "dynamic_reconfigure/server.h"
+#include "parameter_set/drConfig.h"
+
 class OtterController
 {
 public:
   OtterController();
 
 private:
+  
+  void set_param();
   double calculateSurgeForce(double deltaTime, double u);
   double calculateYawMoment(double deltaTime, double psi, double r);
   Eigen::Vector2d thrustAllocation(Eigen::Vector3d tau_d);
@@ -42,8 +47,13 @@ private:
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
 
   void setPoint(const geometry_msgs::PoseStamped& point);
-  void set_param();
+  
   void latching_algorithm();
+  void get_control_param();
+
+  void cb(parameter_set::drConfig& config, uint32_t level);
+
+  
 
   // Heading controller
   double Kp_psi = 0;

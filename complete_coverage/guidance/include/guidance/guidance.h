@@ -8,8 +8,8 @@
 #include <std_msgs/Float64MultiArray.h>
 #include "guidance/usv_pose.h"
 #include <nlink_parser/LinktrackAnchorframe0.h>
-
-#define point_number 5*2 //路径相关
+#include "stof/stof.h"
+#include <string.h>
 
 namespace otter_coverage
 {
@@ -69,6 +69,8 @@ namespace otter_coverage
     double x_1;
     double y_1;
     double heading_angle;
+
+    double m_path_[point_number];
 
     guidance::usv_pose usv_pose;
   };

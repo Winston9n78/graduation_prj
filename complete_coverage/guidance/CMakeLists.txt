@@ -196,6 +196,7 @@ add_executable(guidance_node
   include/guidance/guidance.h
   src/guidance.cpp
   src/guidance_node.cpp
+  src/stof.cpp
 )
 add_dependencies(guidance_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(guidance_node

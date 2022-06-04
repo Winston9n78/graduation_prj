@@ -463,6 +463,41 @@ Eigen::Matrix4d TagDetector::getRelativeTransform(
     std::vector<cv::Point2d > imagePoints,
     double fx, double fy, double cx, double cy) const
 {
+  // // perform Perspective-n-Point camera pose estimation using the
+  // // above 3D-2D point correspondences
+  // cv::Mat rvec, tvec;
+  // cv::Matx33d cameraMatrix(fx,  0, cx,
+  //                          0,  fy, cy,
+  //                          0,   0,  1);
+  // cv::Vec4f distCoeffs(0,0,0,0); // distortion coefficients
+  // // TODO Perhaps something like SOLVEPNP_EPNP would be faster? Would
+  // // need to first check WHAT is a bottleneck in this code, and only
+  // // do this if PnP solution is the bottleneck.
+  // cv::solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
+
+  // cv::Matx33d R;
+  // cv::Rodrigues(rvec, R);
+  // Eigen::Matrix3d wRo,tmpwRo;
+  // tmpwRo << R(0,0), R(0,1), R(0,2), R(1,0), R(1,1), R(1,2), R(2,0), R(2,1), R(2,2);//R^c_w
+
+  // Eigen::Vector3d t;
+  // t << tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);//t^c_w
+  // t = - tmpwRo.transpose() * t;//t^w_b = -[R^c_w]^T * t^c_w
+
+  // Eigen::Matrix3d rr;
+  // rr << 0,0,1,-1,0,0,0,-1,0;//R^b_c
+  // tmpwRo = rr * tmpwRo;//R^b_c * R^c_w
+  // wRo = tmpwRo.transpose();//R^w_b = [R^c_w]^T * R^c_b = [R^b_c * R^c_w]^T
+
+  // Eigen::Matrix4d T; // homogeneous transformation matrix
+  // T.topLeftCorner(3, 3) = wRo;
+  // T(0,3) = t[0];
+  // T(1,3) = t[1];
+  // T(2,3) = t[2];
+
+  // T.row(3) << 0,0,0,1;
+  // return T;
+
   // perform Perspective-n-Point camera pose estimation using the
   // above 3D-2D point correspondences
   cv::Mat rvec, tvec;
@@ -474,27 +509,15 @@ Eigen::Matrix4d TagDetector::getRelativeTransform(
   // need to first check WHAT is a bottleneck in this code, and only
   // do this if PnP solution is the bottleneck.
   cv::solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
-
   cv::Matx33d R;
   cv::Rodrigues(rvec, R);
-  Eigen::Matrix3d wRo,tmpwRo;
-  tmpwRo << R(0,0), R(0,1), R(0,2), R(1,0), R(1,1), R(1,2), R(2,0), R(2,1), R(2,2);//R^c_w
-
-  Eigen::Vector3d t;
-  t << tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);//t^c_w
-  t = - tmpwRo.transpose() * t;//t^w_b = -[R^c_w]^T * t^c_w
-
-  Eigen::Matrix3d rr;
-  rr << 0,0,1,-1,0,0,0,-1,0;//R^b_c
-  tmpwRo = rr * tmpwRo;//R^b_c * R^c_w
-  wRo = tmpwRo.transpose();//R^w_b = [R^c_w]^T * R^c_b = [R^b_c * R^c_w]^T
+  Eigen::Matrix3d wRo;
+  wRo << R(0,0), R(0,1), R(0,2), R(1,0), R(1,1), R(1,2), R(2,0), R(2,1), R(2,2);
 
   Eigen::Matrix4d T; // homogeneous transformation matrix
   T.topLeftCorner(3, 3) = wRo;
-  T(0,3) = t[0];
-  T(1,3) = t[1];
-  T(2,3) = t[2];
-
+  T.col(3).head(3) <<
+      tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
   T.row(3) << 0,0,0,1;
   return T;
 }

@@ -17,6 +17,8 @@
 
 #include <sensor_msgs/Imu.h>
 
+
+
 OtterController::OtterController() : T(3, 2)
 {
   ros::NodeHandle nh;
@@ -42,10 +44,18 @@ OtterController::OtterController() : T(3, 2)
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
 
+  //启动动态参数服务器节点
+  dynamic_reconfigure::Server<parameter_set::drConfig> server;
+  // dynamic_reconfigure::Server<parameter_set::drConfig>::CallbackType cbType;
+  // cbType = boost::bind(&OtterController::cb,_1,_2);
+  // server.setCallback(cbType);
+
   double frequency = 100.0;
   double deltaTime = 1.0 / frequency;
   ros::Rate rate(frequency);
   while (nh.ok()) {
+
+    get_control_param();
     
     auto tauSurge = calculateSurgeForce(deltaTime, velocity);
 
@@ -54,6 +64,9 @@ OtterController::OtterController() : T(3, 2)
     auto tauYaw = 0 - calculateYawMoment(deltaTime, heading_angle, 0); //根据控制周期，航向角控制
 
     int tauMove = 0;
+
+    // set_param();//参数读取
+
 
     if(tauYaw > 150) tauYaw = 150;
     if(tauYaw < -150) tauYaw = -150;
@@ -70,9 +83,9 @@ OtterController::OtterController() : T(3, 2)
     // stick_to_point();//对点锁定
 
     double left_output = output_dead + speed_swtich_flag * tauSurge + tauYaw - connect_pwm_y + connect_flag_x * 0*connect_pwm_x;// + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + speed_swtich_flag * tauSurge - tauYaw + connect_pwm_y + connect_flag_x * 0*connect_pwm_x;// + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead + speed_swtich_flag * tauSurge - tauYaw - connect_pwm_y + connect_flag_x * 0*connect_pwm_x;// + stick_flag * stick_to_point_pwm_y;
 
-    double head_output = output_dead + tauMove + connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
+    double head_output = output_dead + tauMove - connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
     double tail_output = output_dead + tauMove + connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
@@ -99,6 +112,7 @@ OtterController::OtterController() : T(3, 2)
 
     std::cout << "前轮输出：" << head_output << std::endl;
     std::cout << "后轮输出：" << tail_output << std::endl;
+    std::cout << "P:" << kp_con <<std::endl;
     std::cout << "\n\n" << std::endl;
   
     std_msgs::Float32 left;
@@ -190,7 +204,7 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     apriltag_y = msg.detections[0].pose.pose.pose.position.y;
     apriltag_z = msg.detections[0].pose.pose.pose.position.z;
 
-    apriltag_orientation_x = msg.detections[0].pose.pose.pose.orientation.x;
+    apriltag_orientation_x = msg.detections[0].pose.pose.pose.orientation.y;
     // apriltag_orientation_y = msg.detections[0].pose.pose.pose.orientation.y;
     // apriltag_orientation_z = msg.detections[0].pose.pose.pose.orientation.z;
     // apriltag_orientation_w = msg.detections[0].pose.pose.pose.orientation.w;
@@ -200,16 +214,16 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     // std::cout << "z = " << apriltag_z << std::endl;
     y_error_connect = apriltag_y - target_y;
     x_error_connect = apriltag_z - target_z;
-    orientation_error = apriltag_orientation_x - 0.5;
+    orientation_error = apriltag_orientation_x - 0;
 
     x_integral += x_error_connect;
     y_integral += y_error_connect;
     orientation_integral += apriltag_orientation_x;
 
-    //不到目标是偏差等于0，不输出
-    connect_pwm_y = - kp_con * y_error_connect - ki_con * y_integral;
-    connect_pwm_x = - kp_con * x_error_connect - ki_con * x_integral; //尝试用速度去控制应该更好，就不需要额外设置调节前进回退的参数
-    connect_pwm_orientation =  kp_con_orient * orientation_error + ki_con_orient * orientation_integral;
+    //不到目标是偏差等于0，不输出 kp_con kp_con_orient
+    connect_pwm_y = - 300 * y_error_connect - ki_con * y_integral;
+    connect_pwm_x = - 300 * x_error_connect - ki_con * x_integral; //尝试用速度去控制应该更好，就不需要额外设置调节前进回退的参数
+    connect_pwm_orientation =  800 * orientation_error + ki_con_orient * orientation_integral;
 
     flag_missed_target = false;
   }
@@ -432,6 +446,22 @@ double OtterController::getYaw()
 
   return tf2::getYaw(tfStamped.transform.rotation);
 }
+
+void OtterController::get_control_param(){
+
+  ros::param::get("/OtterController/Connect_P",kp_con);
+  ros::param::get("/OtterController/Connect_I",ki_con);
+  ros::param::get("/OtterControllerr/Connect_D",kd_con);
+  ros::param::get("/OtterController/Connect_P_orien",kp_con_orient);
+  ros::param::get("/OtterController/Connect_I_orien",ki_con_orient);
+  ros::param::get("/OtterController/T_D",Kp_psi);
+  ros::param::get("/OtterController/T_I",Ki_psi);
+  ros::param::get("/OtterController/T_P",Kd_psi);
+  ros::param::get("/OtterController/V_P",Kp_u);
+  ros::param::get("/OtterController/V_I",Ki_u);
+
+}
+
 
 int main(int argc, char* argv[])
 {
