@@ -78,9 +78,28 @@ OtterController::OtterController() : T(3, 2)
       tauMove = keyboard_move;
     }
 
-    //在输出前运行对接程序
-    latching_algorithm();//对接锁定
-    // stick_to_point();//对点锁定
+    /*
+     对接程序框架：
+     holding position
+     ->看到apriltag->
+     latching
+     ->锁住则成功，其他则为失败->
+     if failed:holding position until arrive
+     else:next operation
+    
+    */
+    static int holding_statues,latch_statues, step1_done;
+    if(!step1_done)
+      holding_statues = stick_to_point();// 对点锁定
+
+    if(holding_statues == true && (latch_statues!=1)){
+      step1_done = true;
+      latch_statues = latching_algorithm();// 对接逻辑，被动船不用
+    }
+
+    if(latch_statues == 1){
+      // 对接成功
+    }
 
     double left_output = output_dead + speed_swtich_flag * tauSurge + tauYaw - connect_pwm_y + connect_flag_x * 0*connect_pwm_x;// + stick_flag * stick_to_point_pwm_y;
     double right_output = output_dead + speed_swtich_flag * tauSurge - tauYaw - connect_pwm_y + connect_flag_x * 0*connect_pwm_x;// + stick_flag * stick_to_point_pwm_y;
@@ -97,7 +116,6 @@ OtterController::OtterController() : T(3, 2)
                    + std::pow(point_now_y - Point_set.pose.position.y, 2));
 
     std::cout << "电池电压：" << voltage << std::endl;
-    std::cout << "与目标点距离：" << dist << std::endl;
     std::cout << "当前角度：" << heading_angle << std::endl;
     std::cout << "期望角度： " << psi_d << std::endl;
 
@@ -141,7 +159,12 @@ void OtterController::setPoint(const geometry_msgs::PoseStamped& point) {
   // std::cout << "订阅的目标点坐标(" << Point_goal.pose.position.x << ", " << Point_goal.pose.position.y << ")" << std::endl;
 } 
 
-void OtterController::latching_algorithm(){
+/*
+return 0：对接失败
+return 1：对接成功
+return 2：对接进行中
+*/
+int OtterController::latching_algorithm(){
 
   static bool prepared_flag = 0;
   static double target_z_ = target_z/2; //taret_z是怼上去的与tag的最短极限距离
@@ -163,40 +186,43 @@ void OtterController::latching_algorithm(){
         }
 
         else{ 
-          //偏差太大不能前进
+          //横向偏差太大不能前进
           connect_flag_x = 0;
         }
       }
-
       else{ //向前过头
         prepared_flag = 0;
-        target_z = target_z_ * 2;
-
+        target_z = target_z_ * 2; //改变目标距离
       }
+
+      return 2;
     }
 
     else{
-
       // std::cout << "回退调整......" << std::endl;
-
       if(apriltag_z > (2 * target_z_)) prepared_flag = 1;
+      return 0;
     }
   
   }
 
   if(flag_missed_target){ //不进行对接程序
-
-    speed_swtich_flag = 1;
+    // speed_swtich_flag = 1;
     connect_flag_x = 0;
     connect_flag_y = 0;
 
   }
+
+  // 由锁的状态返回对接成功状态
+  /*
+  if(conneected()) return 1;
+  */
 }
 
+// 计算对接偏差输出
 void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg){
 
   static double x_integral,y_integral, orientation_integral;
-
 
   if(msg.detections.size() != 0){
 
@@ -212,9 +238,9 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     // std::cout << "x = " << apriltag_x << std::endl;
     // std::cout << "y = " << apriltag_y << std::endl;
     // std::cout << "z = " << apriltag_z << std::endl;
-    y_error_connect = apriltag_y - target_y;
-    x_error_connect = apriltag_z - target_z;
-    orientation_error = apriltag_orientation_x - 0;
+    y_error_connect = apriltag_y - target_y; // 0 左右偏差
+    x_error_connect = apriltag_z - target_z; // 0.5 距离
+    orientation_error = apriltag_orientation_x - 0; // 旋转角偏差
 
     x_integral += x_error_connect;
     y_integral += y_error_connect;
@@ -257,9 +283,11 @@ void OtterController::keyboard_Callback(const std_msgs::Int32MultiArray& msg){
 }
 
 //需要写触发条件（离目标点距离小于一定值），并且确保去死区（使控制实时）
-void OtterController::stick_to_point(){
+int OtterController::stick_to_point(){
 
   static double x_integral,y_integral;
+  static bool arrive;
+  double radius = 0.8;
   //设定点应该自动计算
   x_error_stick = point_now_x - Point_set.pose.position.x;
   y_error_stick = point_now_y - Point_set.pose.position.y;
@@ -272,14 +300,19 @@ void OtterController::stick_to_point(){
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
-  if(dist < 0.5 && flag_missed_target) { //在某点静止等待，在发现目标时自动对接
-    stick_flag = 1;
+  if(dist < radius) arrive = true;
+
+  if(arrive && dist < radius){
     speed_swtich_flag = 0;
-  }
-  else{
     stick_flag = 0;
-    speed_swtich_flag = 1;
   }
+  else if(arrive && dist > radius){ //离开目标点一定范围，开始通过x与y坐标偏差控制。航向角是一直开着的。
+    stick_flag = 1;
+    speed_swtich_flag = 0;    
+  }
+
+  if(arrive && !flag_missed_target) return 1;
+  else return 0;
 
 }
 

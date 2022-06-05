@@ -42,13 +42,15 @@ private:
   void voltage_Callback(const std_msgs::Float32& msg);
   void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg);
   void thrust_ouput_limit(double& output_value);
-  void stick_to_point();
+
   void keyboard_Callback(const std_msgs::Int32MultiArray& msg);
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
 
   void setPoint(const geometry_msgs::PoseStamped& point);
   
-  void latching_algorithm();
+  int stick_to_point();
+  int latching_algorithm();
+  
   void get_control_param();
 
   void cb(parameter_server::drConfig& config, uint32_t level);

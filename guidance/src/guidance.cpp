@@ -76,7 +76,7 @@ Guidance::Guidance()
         else{
           
           // u = 1;//停船
-          i = 0;//循环航行
+          // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
         }
 
         //循环运行可以在这里改逻辑
@@ -87,10 +87,12 @@ Guidance::Guidance()
 
     }
 
+    // 将最终目标点坐标publish
     geometry_msgs::PoseStamped goal_point_;
     goal_point_.pose.position.x = m_path[i+2];
     goal_point_.pose.position.y = m_path[i+3];
     goal_point_pub.publish(goal_point_);
+
     followPath(x_0, y_0, heading_angle, m_path[i+0], m_path[i+1], m_path[i+2], m_path[i+3]);
 
     //发布两个点的坐标到tf坐标系中，可以在rviz中显示
