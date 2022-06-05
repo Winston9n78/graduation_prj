@@ -144,7 +144,7 @@ void OtterController::setPoint(const geometry_msgs::PoseStamped& point) {
 } 
 
 /*
-return 0：未成功
+return 0：对接中
 return 1：对接成功
 */
 int OtterController::latching_algorithm(){
@@ -388,7 +388,7 @@ double OtterController::calculateYawMoment(double deltaTime, double psi_slam, do
   
   // TODO: anti windup
   integralTerm += psi_tilde * deltaTime;
-  integralTerm > 10? 10:integralTerm;
+  integralTerm > 10 ? 10:integralTerm;
   
   output =  Kp_psi * psi_tilde + Ki_psi * integralTerm + Kd_psi * D;
   output > 200 ? 200 : output;
