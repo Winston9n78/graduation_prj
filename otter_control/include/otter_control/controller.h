@@ -50,7 +50,7 @@ private:
   
   int stick_to_point();
   int latching_algorithm();
-  
+
   void get_control_param();
 
   void cb(parameter_server::drConfig& config, uint32_t level);
@@ -124,7 +124,7 @@ private:
   double y_error_connect, x_error_connect, orientation_error;
   double x_error_stick, y_error_stick;
 
-  double target_y = 0, target_z = 0.5;
+  double target_x = 0, target_z = 0.5;
 
   double voltage = 0;
 

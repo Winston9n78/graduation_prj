@@ -72,7 +72,7 @@ OtterController::OtterController() : T(3, 2)
     if(tauYaw < -150) tauYaw = -150;
 
     if(keyboard_start != false){
-      std::cout << "遥控模式启动" << std::endl;
+      ROS_INFO_STREAM("AT9S Online");
       tauSurge = keyboard_val_speed;
       tauYaw = -keyboard_val_turning;
       tauMove = keyboard_move;
@@ -114,24 +114,24 @@ OtterController::OtterController() : T(3, 2)
 
     // double dist = std::sqrt(std::pow(point_now_x - Point_set.pose.position.x, 2)
     //                + std::pow(point_now_y - Point_set.pose.position.y, 2));
+    // 方便调试直接在这里输出信息了
+    ROS_INFO_STREAM("batterty_voltage: " << voltage);
+    ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
+    ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
 
-    std::cout << "电池电压：" << voltage << std::endl;
-    std::cout << "当前角度：" << heading_angle << std::endl;
-    std::cout << "期望角度： " << psi_d << std::endl;
+    ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
+    ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
 
-    std::cout << "当前速度：" << velocity << std::endl; //目前直接给,在.h文件中，应该直接给出来
-    std::cout << "期望速度：" << u_d << std::endl;//发布的u， velocity
+    if(!flag_missed_target) ROS_INFO_STREAM("conectting...........");
+    else ROS_INFO_STREAM("no Apriltag detected...");
 
-    if(!flag_missed_target) std::cout << "对接进行中......" << std::endl;
-    else std::cout << "未检测到目标" << std::endl;
+    ROS_INFO_STREAM("left_output: " << left_output); 
+    ROS_INFO_STREAM("right_output: " << right_output);
 
-    std::cout << "左轮输出：" << left_output << std::endl;
-    std::cout << "右轮输出：" << right_output << std::endl;
+    ROS_INFO_STREAM("head_output: " << head_output); 
+    ROS_INFO_STREAM("tail_output: " << tail_output);
 
-    std::cout << "前轮输出：" << head_output << std::endl;
-    std::cout << "后轮输出：" << tail_output << std::endl;
-    std::cout << "P:" << kp_con <<std::endl;
-    std::cout << "\n\n" << std::endl;
+    ROS_INFO_STREAM("--------------------------INFO-------------------------------");
   
     std_msgs::Float32 left;
     left.data = static_cast<float>(left_output);
@@ -230,7 +230,7 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     apriltag_y = msg.detections[0].pose.pose.pose.position.y;
     apriltag_z = msg.detections[0].pose.pose.pose.position.z;
 
-    apriltag_orientation_x = msg.detections[0].pose.pose.pose.orientation.y;
+    apriltag_orientation_x = msg.detections[0].pose.pose.pose.orientation.z;
     // apriltag_orientation_y = msg.detections[0].pose.pose.pose.orientation.y;
     // apriltag_orientation_z = msg.detections[0].pose.pose.pose.orientation.z;
     // apriltag_orientation_w = msg.detections[0].pose.pose.pose.orientation.w;
@@ -238,7 +238,7 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     // std::cout << "x = " << apriltag_x << std::endl;
     // std::cout << "y = " << apriltag_y << std::endl;
     // std::cout << "z = " << apriltag_z << std::endl;
-    y_error_connect = apriltag_y - target_y; // 0 左右偏差
+    y_error_connect = apriltag_x - target_x; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
     x_error_connect = apriltag_z - target_z; // 0.5 距离
     orientation_error = apriltag_orientation_x - 0; // 旋转角偏差
 
