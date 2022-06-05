@@ -121,6 +121,8 @@ private:
 
   bool speed_swtich_flag = 1, turnning_switch_flag = 1;
 
+  bool Arrive_master, Arrive_slave;
+
   double y_error_connect, x_error_connect, orientation_error;
   double x_error_stick, y_error_stick;
   double y_error_integral, x_error_integral, orientation_error_integral;

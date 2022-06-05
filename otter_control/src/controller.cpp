@@ -55,44 +55,43 @@ OtterController::OtterController() : T(3, 2)
   ros::Rate rate(frequency);
   while (nh.ok()) {
 
+    static int latch_statues,is_step1_done;
+    double tauSurge, tauYaw;
+
     get_control_param();
-    
-    auto tauSurge = calculateSurgeForce(deltaTime, velocity);
-
-    // Heading controller 航向角控制
-    // auto tauYaw = calculateYawMoment(deltaTime, psi_slam, r); //根据控制周期，航向角控制
-    auto tauYaw = 0 - calculateYawMoment(deltaTime, heading_angle, 0); //根据控制周期，航向角控制
-
-    if(tauYaw > 150) tauYaw = 150;
-    if(tauYaw < -150) tauYaw = -150;
 
     /*
-     对接程序框架：
+     对接程序框架(当被动船确定没有识别二维码时框架可直接用在被动船)：
      holding position
      ->看到apriltag->
      latching
-     ->锁住则成功，其他则为失败->
+     ->锁住则成功，其他则为失败,自动循环对接，直到成功->
      if failed:holding position until arrive
      else:next operation
     */
-    static int holding_statues,latch_statues,step1_done;
-    if(!step1_done)
-      holding_statues = stick_to_point();// 对点锁定
 
-    if(holding_statues == true && (latch_statues!=1)){
-      step1_done = true;
+    if(is_step1_done == false){
+      if(!Arrive_master) tauSurge = calculateSurgeForce(deltaTime, velocity);
+      else tauSurge = 0;
+      tauYaw = calculateYawMoment(deltaTime, heading_angle, 0); //根据控制周期，航向角控制
+      is_step1_done = stick_to_point(); /* 对点锁定 */
+    }
+
+    if(is_step1_done == true && (latch_statues!=1)){
       latch_statues = latching_algorithm();// 对接逻辑，被动船不用
+      tauYaw = 0;
+      tauSurge = 0;
     }
 
     if(latch_statues == 1){
-      // 对接成功的操作
+      /* 对接成功的操作 */ 
     }
 
-    double left_output = output_dead + speed_swtich_flag * tauSurge + tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + speed_swtich_flag * tauSurge - tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge + tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead + tauSurge - tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
 
-    double head_output = output_dead - connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
-    double tail_output = output_dead + connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
+    double head_output = output_dead - connect_pwm_orientation + stick_to_point_pwm_x;
+    double tail_output = output_dead + connect_pwm_orientation + stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
@@ -155,8 +154,6 @@ int OtterController::latching_algorithm(){
   connect_pwm_y = minimize(y_error_connect, kp_con, ki_con, y_error_integral);
   connect_pwm_orientation = minimize(orientation_error, kp_con_orient, ki_con_orient, orientation_error_integral);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
-
-    speed_swtich_flag = 0; //速度为0了，航向角的控制变不变0呢？
 
     if(prepared_flag){
       // std::cout << "准备就绪" << std::endl;
@@ -257,37 +254,38 @@ void OtterController::keyboard_Callback(const std_msgs::Int32MultiArray& msg){
 
 /*
 return 0: 未开始holding或者正在holding
-return 1: holding过程中
+return 1: holding过程中检测到了二维码则立马进入对接状态
 */
 int OtterController::stick_to_point(){
 
   static double x_integral,y_integral;
-  static bool arrive;
   double radius = 0.8; // holding半径
   //设定点应该自动计算
   x_error_stick = point_now_x - Point_set.pose.position.x;
   y_error_stick = point_now_y - Point_set.pose.position.y;
 
+  // 可以用minimize来算
   x_integral += x_error_stick;
   y_integral += y_error_stick;
+  y_integral > 20 ? 20 : y_integral;
+  x_integral > 20 ? 20 : x_integral;
 
   stick_to_point_pwm_x = - kp_stick * x_error_stick - ki_stick * x_integral;
   stick_to_point_pwm_y = - kp_stick * y_error_stick - ki_stick * y_integral;
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
-  if(dist < radius) arrive = true;
+  if(dist < radius) Arrive_master = true;
 
-  if(arrive && dist < radius){
-    speed_swtich_flag = 0;
-    stick_flag = 0;
+  if(Arrive_master && dist < radius){
+    stick_to_point_pwm_x = 0;
+    stick_to_point_pwm_y = 0;
   }
-  else if(arrive && dist > radius){ //离开目标点一定范围，开始通过x与y坐标偏差控制。航向角是一直开着的。
-    stick_flag = 1;
-    speed_swtich_flag = 0;    
+  else if(Arrive_master && dist > radius){ //离开目标点一定范围，开始通过x与y坐标偏差控制。航向角是一直开着的。
+   
   }
 
-  if(arrive && !flag_missed_target) {stick_flag = 0;return 1;}
+  if(Arrive_master && !flag_missed_target) {stick_flag = 0;return 1;}
   else return 0;
 
 }
@@ -369,9 +367,9 @@ double OtterController::calculateYawMoment(double deltaTime, double psi_slam, do
   // ROS_INFO_STREAM("Psi: " << psi_slam);
 
   static double integralTerm = 0.0;
-  float D;
+  double D;
 
-  float output_turning;
+  double output;
 
   double r_d_dot = 0.0;
   double r_tilde = 0.0; // r - r_d;
@@ -391,9 +389,12 @@ double OtterController::calculateYawMoment(double deltaTime, double psi_slam, do
   // TODO: anti windup
   integralTerm += psi_tilde * deltaTime;
   integralTerm > 10? 10:integralTerm;
-    
+  
+  output =  Kp_psi * psi_tilde + Ki_psi * integralTerm + Kd_psi * D;
+  output > 200 ? 200 : output;
+  output < -200 ? -200 : output;
   // return mass_psi * (r_d_dot - Kd_psi * r_tilde - Kp_psi * psi_tilde - Ki_psi * integralTerm) - damp_psi * r;
-  return ( - Kp_psi * psi_tilde - Ki_psi * integralTerm - Kd_psi * D);
+  return output;
 }
 
 Eigen::Vector2d OtterController::thrustAllocation(Eigen::Vector3d tau_d)
