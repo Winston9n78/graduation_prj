@@ -54,7 +54,7 @@ private:
   void get_control_param();
 
   void cb(parameter_server::drConfig& config, uint32_t level);
-
+  double minimize(double error, double kp, double ki, double integral);
   
 
   // Heading controller
@@ -123,8 +123,9 @@ private:
 
   double y_error_connect, x_error_connect, orientation_error;
   double x_error_stick, y_error_stick;
+  double y_error_integral, x_error_integral, orientation_error_integral;
 
-  double target_x = 0, target_z = 0.5;
+  double target_z = 0.5;
 
   double voltage = 0;
 

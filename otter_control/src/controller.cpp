@@ -63,20 +63,8 @@ OtterController::OtterController() : T(3, 2)
     // auto tauYaw = calculateYawMoment(deltaTime, psi_slam, r); //根据控制周期，航向角控制
     auto tauYaw = 0 - calculateYawMoment(deltaTime, heading_angle, 0); //根据控制周期，航向角控制
 
-    int tauMove = 0;
-
-    // set_param();//参数读取
-
-
     if(tauYaw > 150) tauYaw = 150;
     if(tauYaw < -150) tauYaw = -150;
-
-    if(keyboard_start != false){
-      ROS_INFO_STREAM("AT9S Online");
-      tauSurge = keyboard_val_speed;
-      tauYaw = -keyboard_val_turning;
-      tauMove = keyboard_move;
-    }
 
     /*
      对接程序框架：
@@ -86,9 +74,8 @@ OtterController::OtterController() : T(3, 2)
      ->锁住则成功，其他则为失败->
      if failed:holding position until arrive
      else:next operation
-    
     */
-    static int holding_statues,latch_statues, step1_done;
+    static int holding_statues,latch_statues,step1_done;
     if(!step1_done)
       holding_statues = stick_to_point();// 对点锁定
 
@@ -98,22 +85,34 @@ OtterController::OtterController() : T(3, 2)
     }
 
     if(latch_statues == 1){
-      // 对接成功
+      // 对接成功的操作
     }
 
-    double left_output = output_dead + speed_swtich_flag * tauSurge + tauYaw - connect_pwm_y + connect_flag_x * 0*connect_pwm_x;// + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + speed_swtich_flag * tauSurge - tauYaw - connect_pwm_y + connect_flag_x * 0*connect_pwm_x;// + stick_flag * stick_to_point_pwm_y;
+    double left_output = output_dead + speed_swtich_flag * tauSurge + tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead + speed_swtich_flag * tauSurge - tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
 
-    double head_output = output_dead + tauMove - connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
-    double tail_output = output_dead + tauMove + connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
+    double head_output = output_dead - connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
+    double tail_output = output_dead + connect_pwm_orientation + stick_flag * stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
     thrust_ouput_limit(head_output);
     thrust_ouput_limit(tail_output);
+  
+    std_msgs::Float32 left;
+    left.data = static_cast<float>(left_output);
+    std_msgs::Float32 right;
+    right.data = static_cast<float>(right_output);
+    std_msgs::Float32 head;
+    head.data = static_cast<float>(head_output);
+    std_msgs::Float32 tail;
+    tail.data = static_cast<float>(tail_output);
 
-    // double dist = std::sqrt(std::pow(point_now_x - Point_set.pose.position.x, 2)
-    //                + std::pow(point_now_y - Point_set.pose.position.y, 2));
+    m_leftPub.publish(left);
+    m_rightPub.publish(right);
+    m_headPub.publish(head);
+    m_tailPub.publish(tail);
+
     // 方便调试直接在这里输出信息了
     ROS_INFO_STREAM("batterty_voltage: " << voltage);
     ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
@@ -132,20 +131,6 @@ OtterController::OtterController() : T(3, 2)
     ROS_INFO_STREAM("tail_output: " << tail_output);
 
     ROS_INFO_STREAM("--------------------------INFO-------------------------------");
-  
-    std_msgs::Float32 left;
-    left.data = static_cast<float>(left_output);
-    std_msgs::Float32 right;
-    right.data = static_cast<float>(right_output);
-    std_msgs::Float32 head;
-    head.data = static_cast<float>(head_output);
-    std_msgs::Float32 tail;
-    tail.data = static_cast<float>(tail_output);
-
-    m_leftPub.publish(left);
-    m_rightPub.publish(right);
-    m_headPub.publish(head);
-    m_tailPub.publish(tail);
 
     ros::spinOnce();
     rate.sleep();
@@ -160,69 +145,55 @@ void OtterController::setPoint(const geometry_msgs::PoseStamped& point) {
 } 
 
 /*
-return 0：对接失败
+return 0：未成功
 return 1：对接成功
-return 2：对接进行中
 */
 int OtterController::latching_algorithm(){
 
   static bool prepared_flag = 0;
-  static double target_z_ = target_z/2; //taret_z是怼上去的与tag的最短极限距离
-  //距离有两个：对接准备跟随距离和对接机构距离
 
-  //并且需要min(角度)
+  connect_pwm_y = minimize(y_error_connect, kp_con, ki_con, y_error_integral);
+  connect_pwm_orientation = minimize(orientation_error, kp_con_orient, ki_con_orient, orientation_error_integral);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 
-    speed_swtich_flag = 0;
-    connect_flag_y = 1;
+    speed_swtich_flag = 0; //速度为0了，航向角的控制变不变0呢？
 
     if(prepared_flag){
       // std::cout << "准备就绪" << std::endl;
-      if(apriltag_z > target_z_){
+      if(x_error_connect > 0){
 
         if(y_error_connect < 0.4 &&  y_error_connect > -0.4){ //或者需要航向偏差小于一定值
-          target_z = target_z_;//怼上去
-          connect_flag_x = 1;
+          connect_pwm_x = minimize(x_error_connect, kp_con, ki_con, x_error_integral);
         }
-
         else{ 
           //横向偏差太大不能前进
-          connect_flag_x = 0;
+          connect_pwm_x = 0;
         }
       }
       else{ //向前过头
         prepared_flag = 0;
-        target_z = target_z_ * 2; //改变目标距离
       }
-
-      return 2;
     }
 
     else{
-      // std::cout << "回退调整......" << std::endl;
-      if(apriltag_z > (2 * target_z_)) prepared_flag = 1;
-      return 0;
+      connect_pwm_x = minimize(x_error_connect - 1, kp_con, ki_con, x_error_integral); // 改变目标距离
+      if(x_error_connect > 1){
+        prepared_flag = 1;
+      }
     }
-  
   }
 
-  if(flag_missed_target){ //不进行对接程序
-    // speed_swtich_flag = 1;
-    connect_flag_x = 0;
-    connect_flag_y = 0;
-
-  }
-
+  if(0) return 1;
+  else return 0;
   // 由锁的状态返回对接成功状态
   /*
   if(conneected()) return 1;
+  else return 0;
   */
 }
 
 // 计算对接偏差输出
 void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg){
-
-  static double x_integral,y_integral, orientation_integral;
 
   if(msg.detections.size() != 0){
 
@@ -234,37 +205,39 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     // apriltag_orientation_y = msg.detections[0].pose.pose.pose.orientation.y;
     // apriltag_orientation_z = msg.detections[0].pose.pose.pose.orientation.z;
     // apriltag_orientation_w = msg.detections[0].pose.pose.pose.orientation.w;
-    // std::cout << "图片坐标： " << std::endl;
-    // std::cout << "x = " << apriltag_x << std::endl;
-    // std::cout << "y = " << apriltag_y << std::endl;
-    // std::cout << "z = " << apriltag_z << std::endl;
-    y_error_connect = apriltag_x - target_x; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
-    x_error_connect = apriltag_z - target_z; // 0.5 距离
-    orientation_error = apriltag_orientation_x - 0; // 旋转角偏差
 
-    x_integral += x_error_connect;
-    y_integral += y_error_connect;
-    orientation_integral += apriltag_orientation_x;
+    y_error_connect = apriltag_x; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
+    x_error_connect = apriltag_z; // 0.5 距离
+    orientation_error = apriltag_orientation_x; // 旋转角偏差
 
-    //不到目标是偏差等于0，不输出 kp_con kp_con_orient
-    connect_pwm_y = - kp_con * y_error_connect - ki_con * y_integral;
-    connect_pwm_x = - kp_con * x_error_connect - ki_con * x_integral; //尝试用速度去控制应该更好，就不需要额外设置调节前进回退的参数
-    connect_pwm_orientation =  kp_con_orient * orientation_error + ki_con_orient * orientation_integral;
+    y_error_integral += y_error_connect;
+    x_error_integral += x_error_connect;
+    orientation_error_integral += orientation_error;
 
     flag_missed_target = false;
   }
   else{
+    y_error_integral = 0;
+    x_error_integral = 0;
+    orientation_error_integral = 0;
     flag_missed_target = true;
-    connect_pwm_y = 0;
-    connect_pwm_x = 0;
-    connect_pwm_orientation = 0;
-    x_integral = 0; //积分的必要清零
-    y_integral = 0;
   }
 
   // std::cout << "connect_pwm_x = " << connect_pwm_x << std::endl;
   // std::cout << "connect_pwm_z = " << connect_pwm_z << std::endl;
 
+}
+
+double OtterController::minimize(double error, double kp, double ki, double integral){
+
+    integral > 10 ? 10 : integral; 
+
+    if (flag_missed_target)
+    {
+      return 0;
+    }
+    //不到目标是偏差等于0，不输出
+    return -kp * error - ki * integral;
 }
 
 void OtterController::keyboard_Callback(const std_msgs::Int32MultiArray& msg){
@@ -282,12 +255,15 @@ void OtterController::keyboard_Callback(const std_msgs::Int32MultiArray& msg){
 
 }
 
-//需要写触发条件（离目标点距离小于一定值），并且确保去死区（使控制实时）
+/*
+return 0: 未开始holding或者正在holding
+return 1: holding过程中
+*/
 int OtterController::stick_to_point(){
 
   static double x_integral,y_integral;
   static bool arrive;
-  double radius = 0.8;
+  double radius = 0.8; // holding半径
   //设定点应该自动计算
   x_error_stick = point_now_x - Point_set.pose.position.x;
   y_error_stick = point_now_y - Point_set.pose.position.y;
@@ -311,7 +287,7 @@ int OtterController::stick_to_point(){
     speed_swtich_flag = 0;    
   }
 
-  if(arrive && !flag_missed_target) return 1;
+  if(arrive && !flag_missed_target) {stick_flag = 0;return 1;}
   else return 0;
 
 }
@@ -378,7 +354,8 @@ double OtterController::calculateSurgeForce(double deltaTime, double u)
   double u_d_dot = 0.0;
   double u_tilde = u - u_d;
 
-  // integralTerm += u_tilde * deltaTime;
+  integralTerm += u_tilde * deltaTime;
+  integralTerm > 10? 10 : integralTerm;
   //  先纯P控制
   // return mass_u * (u_d_dot - Kp_u * u_tilde - Ki_u * integralTerm) + damp_u * u; //pid控制速度
   return -(u_d_dot - Kp_u * u_tilde - Ki_u * integralTerm);
@@ -413,7 +390,7 @@ double OtterController::calculateYawMoment(double deltaTime, double psi_slam, do
   
   // TODO: anti windup
   integralTerm += psi_tilde * deltaTime;
-  thrust_ouput_limit(integralTerm); //积分限幅
+  integralTerm > 10? 10:integralTerm;
     
   // return mass_psi * (r_d_dot - Kd_psi * r_tilde - Kp_psi * psi_tilde - Ki_psi * integralTerm) - damp_psi * r;
   return ( - Kp_psi * psi_tilde - Ki_psi * integralTerm - Kd_psi * D);
