@@ -112,8 +112,8 @@ OtterController::OtterController() : T(3, 2)
     thrust_ouput_limit(head_output);
     thrust_ouput_limit(tail_output);
 
-    double dist = std::sqrt(std::pow(point_now_x - Point_set.pose.position.x, 2)
-                   + std::pow(point_now_y - Point_set.pose.position.y, 2));
+    // double dist = std::sqrt(std::pow(point_now_x - Point_set.pose.position.x, 2)
+    //                + std::pow(point_now_y - Point_set.pose.position.y, 2));
 
     std::cout << "电池电压：" << voltage << std::endl;
     std::cout << "当前角度：" << heading_angle << std::endl;
@@ -247,9 +247,9 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     orientation_integral += apriltag_orientation_x;
 
     //不到目标是偏差等于0，不输出 kp_con kp_con_orient
-    connect_pwm_y = - 300 * y_error_connect - ki_con * y_integral;
-    connect_pwm_x = - 300 * x_error_connect - ki_con * x_integral; //尝试用速度去控制应该更好，就不需要额外设置调节前进回退的参数
-    connect_pwm_orientation =  800 * orientation_error + ki_con_orient * orientation_integral;
+    connect_pwm_y = - kp_con * y_error_connect - ki_con * y_integral;
+    connect_pwm_x = - kp_con * x_error_connect - ki_con * x_integral; //尝试用速度去控制应该更好，就不需要额外设置调节前进回退的参数
+    connect_pwm_orientation =  kp_con_orient * orientation_error + ki_con_orient * orientation_integral;
 
     flag_missed_target = false;
   }
@@ -487,11 +487,14 @@ void OtterController::get_control_param(){
   ros::param::get("/OtterControllerr/Connect_D",kd_con);
   ros::param::get("/OtterController/Connect_P_orien",kp_con_orient);
   ros::param::get("/OtterController/Connect_I_orien",ki_con_orient);
-  ros::param::get("/OtterController/T_D",Kp_psi);
+  ros::param::get("/OtterController/T_P",Kp_psi);
   ros::param::get("/OtterController/T_I",Ki_psi);
-  ros::param::get("/OtterController/T_P",Kd_psi);
+  ros::param::get("/OtterController/T_D",Kd_psi);
   ros::param::get("/OtterController/V_P",Kp_u);
   ros::param::get("/OtterController/V_I",Ki_u);
+  ros::param::get("/OtterController/Stick_P",kp_stick);
+  ros::param::get("/OtterController/Stick_I",ki_stick);
+  ros::param::get("/OtterController/Stick_D",kd_stick);
 
 }
 
