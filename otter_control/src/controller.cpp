@@ -69,6 +69,7 @@ OtterController::OtterController() : T(3, 2)
      if failed:holding position until arrive
      else:next operation
     */
+#if 0 /*对接测试*/
 
     if(is_step1_done == false){
       if(!Arrive_master) tauSurge = calculateSurgeForce(deltaTime, velocity);
@@ -86,6 +87,12 @@ OtterController::OtterController() : T(3, 2)
     if(latch_statues == 1){
       /* 对接成功的操作 */ 
     }
+
+#else /* 对准测试 */
+
+    latching_algorithm();
+
+#endif
 
     double left_output = output_dead + tauSurge + tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
     double right_output = output_dead + tauSurge - tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
@@ -157,10 +164,10 @@ int OtterController::latching_algorithm(){
 
     if(prepared_flag){
       // std::cout << "准备就绪" << std::endl;
-      if(x_error_connect > 0){
+      if(x_error_connect > 0.5){
 
-        if(y_error_connect < 0.4 &&  y_error_connect > -0.4){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect, kp_con, ki_con, x_error_integral);
+        if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 0.1 && orientation_error > -0.1){ //或者需要航向偏差小于一定值
+          connect_pwm_x = minimize(x_error_connect, kp_con - 150, ki_con, x_error_integral);
         }
         else{ 
           //横向偏差太大不能前进
@@ -173,11 +180,17 @@ int OtterController::latching_algorithm(){
     }
 
     else{
-      connect_pwm_x = minimize(x_error_connect - 1, kp_con, ki_con, x_error_integral); // 改变目标距离
+      connect_pwm_x = minimize(x_error_connect - 0.8, kp_con, ki_con, x_error_integral); // 改变目标距离
       if(x_error_connect > 1){
         prepared_flag = 1;
       }
     }
+  }
+
+  else{
+    connect_pwm_x = 0;
+    connect_pwm_orientation = 0;
+    connect_pwm_y = 0;
   }
 
   if(0) return 1;
@@ -217,6 +230,9 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     y_error_integral = 0;
     x_error_integral = 0;
     orientation_error_integral = 0;
+    y_error_connect = 0;
+    x_error_connect = 0;
+    orientation_error = 0;
     flag_missed_target = true;
   }
 
