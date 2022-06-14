@@ -37,15 +37,11 @@
   <!-- <node name="linktrack_node" pkg="nlink_example" type="linktrack_example" output="screen"/> -->
 
   <!-- Guidance node -->
-  <node name="guidance_node" pkg="guidance" type="guidance_node" output="screen">
-    <param name="max_speed" value="1.0" />
-    <param name="max_speed_turn" value="0.6" />
-    <param name="min_speed" value="0.4" />
-  </node>
-  <node name="guidance_node" pkg="guidance" type="pose_tf_usv" output="screen"/>
+  <node name="guidance_node" pkg="guidance" type="guidance_node" output="screen" />
+  <!-- <node name="guidance_node" pkg="guidance" type="pose_tf_usv" output="screen"/> -->
 
   <node name="otter_control_node" pkg="otter_control" type="controller" output="screen"/>
-  <node name="otter_parameter_node" pkg="otter_control" type="param_set" output="screen"/>
+  <!-- <node name="otter_parameter_node" pkg="otter_control" type="param_set" output="screen"/> -->
   <!--需要加一个guidance节点计算LOS需要的参数-->
   <!--需要加一个controler节点计算推进器的参数
   <node name="rosserial_node" pkg="rosserial_python" type="serial_node.py" output="screen"/>

@@ -120,24 +120,35 @@ OtterController::OtterController() : T(3, 2)
     m_tailPub.publish(tail);
 
     // 方便调试直接在这里输出信息了
-    ROS_INFO_STREAM("batterty_voltage: " << voltage);
-    ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
-    ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
+    // ROS_INFO_STREAM("batterty_voltage: " << voltage);
+    std::cout << "batterty_voltage: " << voltage << std::endl;
+    // ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
+    std::cout << "heading_angle_current: " << heading_angle << std::endl;
+    // ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
+    std::cout << "heading_angle_expected: " << psi_d << std::endl;
 
-    ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
-    ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
+    // ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
+    std::cout << "velocity_current: " << velocity << std::endl;
+    // ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
+    std::cout << "velocity_expected: " << u_d << std::endl;
 
-    if(!flag_missed_target) ROS_INFO_STREAM("conectting...........");
-    else ROS_INFO_STREAM("no Apriltag detected...");
+    if(!flag_missed_target) //ROS_INFO_STREAM("conectting...........");
+    std::cout << "conectting..........." << std::endl;
+    else //ROS_INFO_STREAM("no Apriltag detected...");
+    std::cout << "no Apriltag detected..." << std::endl;
 
-    ROS_INFO_STREAM("left_output: " << left_output); 
-    ROS_INFO_STREAM("right_output: " << right_output);
+    // ROS_INFO_STREAM("left_output: " << left_output); 
+    std::cout <<"left_output: " << left_output << std::endl;
+    // ROS_INFO_STREAM("right_output: " << right_output);
+    std::cout <<"right_output: " << right_output << std::endl;
 
-    ROS_INFO_STREAM("head_output: " << head_output); 
-    ROS_INFO_STREAM("tail_output: " << tail_output);
+    // ROS_INFO_STREAM("head_output: " << head_output); 
+    std::cout << "head_output: " << head_output << std::endl;
+    // ROS_INFO_STREAM("tail_output: " << tail_output);
+    std::cout << "tail_output: " << tail_output << std::endl;
 
-    ROS_INFO_STREAM("--------------------------INFO-------------------------------");
-
+    //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
+    std::cout << "--------------------------INFO-------------------------------" << std::endl;
     ros::spinOnce();
     rate.sleep();
   }
