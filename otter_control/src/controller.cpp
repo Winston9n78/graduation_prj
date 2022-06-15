@@ -94,11 +94,11 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge + tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + tauSurge - tauYaw - connect_pwm_y + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge + tauYaw + connect_pwm_y + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead + tauSurge - tauYaw + connect_pwm_y + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
 
-    double head_output = output_dead - connect_pwm_orientation + stick_to_point_pwm_x;
-    double tail_output = output_dead + connect_pwm_orientation + stick_to_point_pwm_x;
+    double head_output = output_dead + connect_pwm_orientation + stick_to_point_pwm_x;
+    double tail_output = output_dead - connect_pwm_orientation + stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
