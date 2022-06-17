@@ -77,7 +77,7 @@ private:
   double ki_con = 0;
   double kd_con = 0;
   double kp_con_orient = 0;
-  double ki_con_orient = 0;
+  double kd_con_orient = 0;
   //点保持参数
   double kp_stick = 0;
   double ki_stick = 0;
@@ -107,7 +107,7 @@ private:
   float output_min = 1300;
   float output_dead = 1500;
 
-  double camera_x = 0, camera_y = 0, camera_z = 0;
+  double camera_x = 0, camera_y = 0, camera_z = 0, camera_fi = 0;
   double camera_pitch = 0; //作为yaw
   double connect_pwm_y, connect_pwm_x, connect_pwm_orientation;
 
