@@ -3,7 +3,7 @@ project(otter_control)
 
 add_compile_options(-std=c++11)
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs geometry_msgs sensor_msgs usv_msgs tf2 tf2_ros dynamic_reconfigure)
+find_package(catkin REQUIRED COMPONENTS roscpp tf std_msgs geometry_msgs sensor_msgs usv_msgs tf2 tf2_ros dynamic_reconfigure)
 find_package(Eigen3 REQUIRED)
 
 catkin_package(

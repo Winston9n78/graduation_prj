@@ -508,6 +508,7 @@ Eigen::Matrix4d TagDetector::getRelativeTransform(
   // TODO Perhaps something like SOLVEPNP_EPNP would be faster? Would
   // need to first check WHAT is a bottleneck in this code, and only
   // do this if PnP solution is the bottleneck.
+
   cv::solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
   cv::Matx33d R;
   cv::Rodrigues(rvec, R);
@@ -519,6 +520,7 @@ Eigen::Matrix4d TagDetector::getRelativeTransform(
   T.col(3).head(3) <<
       tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
   T.row(3) << 0,0,0,1;
+  
   return T;
 }
 

@@ -12,11 +12,11 @@
 
   <arg name="fisheye_width"       default="-1"/>
   <arg name="fisheye_height"      default="-1"/>
-  <arg name="enable_fisheye"      default="false"/>
+  <arg name="enable_fisheye"      default="true"/>
 
   <arg name="depth_width"         default="-1"/>
   <arg name="depth_height"        default="-1"/>
-  <arg name="enable_depth"        default="true"/>
+  <arg name="enable_depth"        default="false"/>
 
   <arg name="confidence_width"    default="-1"/>
   <arg name="confidence_height"   default="-1"/>

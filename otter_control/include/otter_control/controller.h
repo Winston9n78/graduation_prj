@@ -22,6 +22,8 @@
 #include "dynamic_reconfigure/server.h"
 #include "parameter_set/drConfig.h"
 
+#include <tf/transform_listener.h>
+
 class OtterController
 {
 public:
@@ -101,12 +103,12 @@ private:
   float angular_velocity_y = 0;
   float angular_velocity_z = 0;
 
-  float output_max = 1900;
-  float output_min = 1100;
+  float output_max = 1700;
+  float output_min = 1300;
   float output_dead = 1500;
 
-  double apriltag_x = 0, apriltag_y = 0, apriltag_z = 0;
-  double apriltag_orientation_x = 0; 
+  double camera_x = 0, camera_y = 0, camera_z = 0;
+  double camera_pitch = 0; //作为yaw
   double connect_pwm_y, connect_pwm_x, connect_pwm_orientation;
 
   double point_now_x, point_now_y, point_now_z;
@@ -124,12 +126,14 @@ private:
   bool Arrive_master, Arrive_slave;
 
   double y_error_connect, x_error_connect, orientation_error;
+  double d_y,d_x,d_o;
   double x_error_stick, y_error_stick;
-  double y_error_integral, x_error_integral, orientation_error_integral;
 
   double target_z = 0.5;
 
   double voltage = 0;
+
+  tf::StampedTransform transform; // my_bundle里的坐标变换关系
 
   geometry_msgs::PoseStamped Point_set;
   // Thruster configuration matrix

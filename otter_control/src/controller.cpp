@@ -43,6 +43,8 @@ OtterController::OtterController() : T(3, 2)
       nh.subscribe("/nlink_linktrack_anchorframe0", 1000, &OtterController::tagframe0Callback, this);//this的作用是什么
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
+  tf::TransformListener listener;
+  
 
   //启动动态参数服务器节点
   dynamic_reconfigure::Server<parameter_server::drConfig> server;
@@ -57,8 +59,20 @@ OtterController::OtterController() : T(3, 2)
 
     static int latch_statues,is_step1_done;
     double tauSurge, tauYaw;
-
+    
     get_control_param();
+
+    
+    try{
+        //得到坐标odom和坐标base_link之间的关系
+      listener.waitForTransform("my_bundle", "camera", ros::Time(0), ros::Duration(3.0));
+      listener.lookupTransform("my_bundle", "camera",
+                               ros::Time(0), transform);
+    }
+    catch (tf::TransformException &ex) {
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+    }
 
     /*
      对接程序框架(当被动船确定没有识别二维码时框架可直接用在被动船)：
@@ -140,12 +154,12 @@ OtterController::OtterController() : T(3, 2)
     // ROS_INFO_STREAM("left_output: " << left_output); 
     std::cout <<"left_output: " << left_output << std::endl;
     // ROS_INFO_STREAM("right_output: " << right_output);
-    std::cout <<"right_output: " << right_output << std::endl;
+    std::cout <<"right_output: " << 3000 - right_output << std::endl;
 
     // ROS_INFO_STREAM("head_output: " << head_output); 
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);
-    std::cout << "tail_output: " << tail_output << std::endl;
+    std::cout << "tail_output: " << 3000 - tail_output << std::endl;
 
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
@@ -169,8 +183,8 @@ int OtterController::latching_algorithm(){
 
   static bool prepared_flag = 0;
 
-  connect_pwm_y = minimize(y_error_connect, kp_con, ki_con, y_error_integral);
-  connect_pwm_orientation = minimize(orientation_error, kp_con_orient, ki_con_orient, orientation_error_integral);
+  connect_pwm_y = minimize(y_error_connect, kp_con, kd_con, d_y);
+  connect_pwm_orientation = minimize(orientation_error, kp_con_orient, ki_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 
     if(prepared_flag){
@@ -178,7 +192,7 @@ int OtterController::latching_algorithm(){
       if(x_error_connect > 0.5){
 
         if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 0.1 && orientation_error > -0.1){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect, kp_con - 150, ki_con, x_error_integral);
+          connect_pwm_x = minimize(x_error_connect, kp_con - 150, kd_con, d_x);
         }
         else{ 
           //横向偏差太大不能前进
@@ -191,7 +205,7 @@ int OtterController::latching_algorithm(){
     }
 
     else{
-      connect_pwm_x = minimize(x_error_connect - 0.8, kp_con, ki_con, x_error_integral); // 改变目标距离
+      connect_pwm_x = minimize(x_error_connect - 0.8, kp_con, kd_con, d_x); // 改变目标距离
       if(x_error_connect > 1){
         prepared_flag = 1;
       }
@@ -215,35 +229,55 @@ int OtterController::latching_algorithm(){
 
 // 计算对接偏差输出
 void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg){
-
+  
+  static double x_error_last,y_error_last,o_error_last;
   if(msg.detections.size() != 0){
 
-    apriltag_x = msg.detections[0].pose.pose.pose.position.x;
-    apriltag_y = msg.detections[0].pose.pose.pose.position.y;
-    apriltag_z = msg.detections[0].pose.pose.pose.position.z;
+    camera_x = transform.getOrigin().x();
+    camera_y = transform.getOrigin().y();
+    camera_z = transform.getOrigin().z();
 
-    apriltag_orientation_x = msg.detections[0].pose.pose.pose.orientation.z;
-    // apriltag_orientation_y = msg.detections[0].pose.pose.pose.orientation.y;
-    // apriltag_orientation_z = msg.detections[0].pose.pose.pose.orientation.z;
-    // apriltag_orientation_w = msg.detections[0].pose.pose.pose.orientation.w;
+    tf::Quaternion quat;
+    (tf::Quaternion&)quat  = tf::Quaternion(transform.getRotation()[0],transform.getRotation()[1],
+                                              transform.getRotation()[2],transform.getRotation()[3]);
+    double roll, pitch, yaw;
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+    roll = roll/3.14159*180;
+    pitch = pitch/3.14159*180;
+    yaw = yaw/3.14159*180;
 
-    y_error_connect = apriltag_x; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
-    x_error_connect = apriltag_z; // 0.5 距离
-    orientation_error = apriltag_orientation_x; // 旋转角偏差
+    camera_pitch = pitch;
 
-    y_error_integral += y_error_connect;
-    x_error_integral += x_error_connect;
-    orientation_error_integral += orientation_error;
+    // std::cout<<"position_x: "<<camera_x<<std::endl;
+    // std::cout<<"position_y: "<<camera_y<<std::endl;
+    // std::cout<<"position_z: "<<camera_z<<std::endl;
+
+    // std::cout<<"roll: "<<roll<<std::endl;
+    // std::cout<<"pitch: "<<pitch<<std::endl;
+    // std::cout<<"yaw: "<<yaw<<std::endl;
+    // std::cout<<"---- "<<std::endl;
+
+    y_error_connect = camera_x; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
+    x_error_connect = camera_z; // 0.5 距离
+    orientation_error = camera_pitch; // 旋转角偏差
+
+    d_y = y_error_connect - y_error_last;
+    d_x = x_error_connect - x_error_last;
+    d_o = orientation_error - o_error_last;
+
+    x_error_last = x_error_connect;
+    y_error_last = y_error_connect;
+    o_error_last = orientation_error;
 
     flag_missed_target = false;
   }
   else{
-    y_error_integral = 0;
-    x_error_integral = 0;
-    orientation_error_integral = 0;
     y_error_connect = 0;
     x_error_connect = 0;
     orientation_error = 0;
+    x_error_last = 0;
+    y_error_last = 0;
+    o_error_last = 0;
     flag_missed_target = true;
   }
 
@@ -254,7 +288,7 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
 
 double OtterController::minimize(double error, double kp, double ki, double integral){
 
-    integral > 10 ? 10 : integral; 
+    // integral > 10 ? 10 : integral; 
 
     if (flag_missed_target)
     {

@@ -94,21 +94,21 @@ void ContinuousDetector::imageCallback (
   if (true) {
     for (unsigned int i = 0; i < tag_detection_array.detections.size(); i++) {
       nav_msgs::Odometry odometry;
-      odometry.header = tag_detection_array.detections[i].pose.header;
-      //odometry.header.frame_id = "my_bundle";
+      // odometry.header = tag_detection_array.detections[i].pose.header;
+      odometry.header.frame_id = "my_bundle";
       odometry.pose.pose = tag_detection_array.detections[i].pose.pose.pose;
       odomtry_publisher_.publish(odometry);
 
-      geometry_msgs::PoseStamped pose_stamped;
-      pose_stamped.header = odometry.header;
-      //pose_stamped.header.frame_id = "world";
-      pose_stamped.pose.position.x = tag_detection_array.detections[i].pose.pose.pose.position.x;
-      pose_stamped.pose.position.y = tag_detection_array.detections[i].pose.pose.pose.position.y;
-      pose_stamped.pose.position.z = tag_detection_array.detections[i].pose.pose.pose.position.z;
-      camera_path.header = pose_stamped.header;
-      //camera_path.header.frame_id = "world";
-      camera_path.poses.push_back(pose_stamped);
-      path_pubilsher.publish(camera_path);
+      // geometry_msgs::PoseStamped pose_stamped;
+      // pose_stamped.header = odometry.header;
+      // //pose_stamped.header.frame_id = "world";
+      // pose_stamped.pose.position.x = tag_detection_array.detections[i].pose.pose.pose.position.x;
+      // pose_stamped.pose.position.y = tag_detection_array.detections[i].pose.pose.pose.position.y;
+      // pose_stamped.pose.position.z = tag_detection_array.detections[i].pose.pose.pose.position.z;
+      // camera_path.header = pose_stamped.header;
+      // //camera_path.header.frame_id = "world";
+      // camera_path.poses.push_back(pose_stamped);
+      // path_pubilsher.publish(camera_path);
 
     }
   }
