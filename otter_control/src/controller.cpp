@@ -61,7 +61,6 @@ OtterController::OtterController() : T(3, 2)
     double tauSurge, tauYaw;
     
     get_control_param();
-
     
     try{
         //得到坐标odom和坐标base_link之间的关系
@@ -70,7 +69,7 @@ OtterController::OtterController() : T(3, 2)
                                ros::Time(0), transform);
     }
     catch (tf::TransformException &ex) {
-      ROS_ERROR("%s",ex.what());
+      // ROS_ERROR("%s",ex.what());
       ros::Duration(1.0).sleep();
     }
 
@@ -108,11 +107,11 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge + tauYaw + connect_pwm_y + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + tauSurge - tauYaw + connect_pwm_y + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge + tauYaw  + connect_pwm_orientation + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead + tauSurge - tauYaw - connect_pwm_orientation + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
 
-    double head_output = output_dead + connect_pwm_orientation + stick_to_point_pwm_x;
-    double tail_output = output_dead - connect_pwm_orientation + stick_to_point_pwm_x;
+    double head_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
+    double tail_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
@@ -133,36 +132,36 @@ OtterController::OtterController() : T(3, 2)
     m_headPub.publish(head);
     m_tailPub.publish(tail);
 
-    // // 方便调试直接在这里输出信息了
-    // // ROS_INFO_STREAM("batterty_voltage: " << voltage);
-    // std::cout << "batterty_voltage: " << voltage << std::endl;
-    // // ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
-    // std::cout << "heading_angle_current: " << heading_angle << std::endl;
-    // // ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
-    // std::cout << "heading_angle_expected: " << psi_d << std::endl;
+    // 方便调试直接在这里输出信息了
+    // ROS_INFO_STREAM("batterty_voltage: " << voltage);
+    std::cout << "batterty_voltage: " << voltage << std::endl;
+    // ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
+    std::cout << "heading_angle_current: " << heading_angle << std::endl;
+    // ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
+    std::cout << "heading_angle_expected: " << psi_d << std::endl;
 
-    // // ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
-    // std::cout << "velocity_current: " << velocity << std::endl;
-    // // ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
-    // std::cout << "velocity_expected: " << u_d << std::endl;
+    // ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
+    std::cout << "velocity_current: " << velocity << std::endl;
+    // ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
+    std::cout << "velocity_expected: " << u_d << std::endl;
 
-    // if(!flag_missed_target) //ROS_INFO_STREAM("conectting...........");
-    // std::cout << "conectting..........." << std::endl;
-    // else //ROS_INFO_STREAM("no Apriltag detected...");
-    // std::cout << "no Apriltag detected..." << std::endl;
+    if(!flag_missed_target) //ROS_INFO_STREAM("conectting...........");
+    std::cout << "conectting..........." << std::endl;
+    else //ROS_INFO_STREAM("no Apriltag detected...");
+    std::cout << "no Apriltag detected..." << std::endl;
 
-    // // ROS_INFO_STREAM("left_output: " << left_output); 
-    // std::cout <<"left_output: " << left_output << std::endl;
-    // // ROS_INFO_STREAM("right_output: " << right_output);
-    // std::cout <<"right_output: " << 3000 - right_output << std::endl;
+    // ROS_INFO_STREAM("left_output: " << left_output); 
+    std::cout <<"left_output: " << left_output << std::endl;
+    // ROS_INFO_STREAM("right_output: " << right_output);
+    std::cout <<"right_output: " << 3000 - right_output << std::endl;
 
-    // // ROS_INFO_STREAM("head_output: " << head_output); 
-    // std::cout << "head_output: " << head_output << std::endl;
-    // // ROS_INFO_STREAM("tail_output: " << tail_output);
-    // std::cout << "tail_output: " << 3000 - tail_output << std::endl;
+    // ROS_INFO_STREAM("head_output: " << head_output); 
+    std::cout << "head_output: " << head_output << std::endl;
+    // ROS_INFO_STREAM("tail_output: " << tail_output);
+    std::cout << "tail_output: " << 3000 - tail_output << std::endl;
 
-    // //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
-    // std::cout << "--------------------------INFO-------------------------------" << std::endl;
+    //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
+    std::cout << "--------------------------INFO-------------------------------" << std::endl;
     ros::spinOnce();
     rate.sleep();
   }
@@ -184,6 +183,7 @@ int OtterController::latching_algorithm(){
   static bool prepared_flag = 0;
 
   connect_pwm_y = minimize(y_error_connect, kp_con, kd_con, d_y);
+  connect_pwm_fi = minimize(camera_fi, 0, 0, d_fi);
   connect_pwm_orientation = minimize(orientation_error, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 
@@ -230,7 +230,7 @@ int OtterController::latching_algorithm(){
 // 计算对接偏差输出
 void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg){
   
-  static double x_error_last,y_error_last,o_error_last;
+  static double x_error_last, y_error_last, o_error_last, camera_fi_last;
   if(msg.detections.size() != 0){
 
     camera_x = transform.getOrigin().x();
@@ -260,16 +260,18 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     // std::cout<<"roll: "<<roll<<std::endl;
     // std::cout<<"pitch: "<<pitch<<std::endl;
     // std::cout<<"yaw: "<<yaw<<std::endl;
-    std::cout<<"camera_fi: "<<camera_fi<<std::endl;
+    // std::cout<<"camera_fi: "<<camera_fi<<std::endl;
     // std::cout<<"---- "<<std::endl;
 
     d_y = y_error_connect - y_error_last;
     d_x = x_error_connect - x_error_last;
     d_o = orientation_error - o_error_last;
+    d_fi = camera_fi - camera_fi_last;
 
     x_error_last = x_error_connect;
     y_error_last = y_error_connect;
     o_error_last = orientation_error;
+    camera_fi_last = camera_fi;
 
     flag_missed_target = false;
   }
