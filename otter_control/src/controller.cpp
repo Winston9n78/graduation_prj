@@ -32,7 +32,7 @@ OtterController::OtterController() : T(3, 2)
   m_tailPub = nh.advertise<std_msgs::Float32>("tail_thrust_cmd", 10);
 
   usv_status_pub = nh.advertise<otter_control::usv_status>("usv_status",1);
-
+  heading_angle_pub = nh.advertise<std_msgs::Float32>("heading_angle",1);
   ros::Subscriber sub = nh.subscribe("speed_heading", 1000, &OtterController::inputCallback, this); //获得速度和期望航向角
   ros::Subscriber sub_imu = nh.subscribe("imu", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
   // ros::Subscriber sub_voltage = nh.subscribe("voltage", 1000, &OtterController::voltage_Callback, this);
@@ -400,6 +400,10 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackAnchorframe
   point_now_z = msg.nodes[0].pos_3d[2];
 
   heading_angle =  (90 - (atan2(delta_y, delta_x) / 3.14) * 180);
+  
+  std_msgs::Float32 heading_;
+  heading_.data = static_cast<float>(heading_angle);
+  heading_angle_pub.publish((std_msgs::Float32)heading_);
   
   float straight_line = pow((msg.nodes[0].pos_3d[1]-record_pos_y_node1),2) + pow((msg.nodes[0].pos_3d[0]-record_pos_x_node1),2);
   //sqrt(straight_line)/0.1;

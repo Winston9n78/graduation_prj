@@ -147,6 +147,7 @@ private:
   ros::Publisher m_headPub;
   ros::Publisher m_tailPub;
   ros::Publisher usv_status_pub;
+  ros::Publisher heading_angle_pub;
 };
 
 #endif
