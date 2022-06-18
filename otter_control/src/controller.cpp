@@ -58,7 +58,7 @@ OtterController::OtterController() : T(3, 2)
   while (nh.ok()) {
 
     static int latch_statues,is_step1_done;
-    double tauSurge, tauYaw;
+    double tauSurge = 0, tauYaw = 0;
     
     get_control_param();
     
@@ -107,8 +107,8 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge + tauYaw  + connect_pwm_orientation + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + tauSurge - tauYaw - connect_pwm_orientation + 0 * connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge + tauYaw  + connect_pwm_orientation + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead + tauSurge - tauYaw + connect_pwm_orientation - connect_pwm_x + stick_flag * stick_to_point_pwm_y;
 
     double head_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
     double tail_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
@@ -189,10 +189,10 @@ int OtterController::latching_algorithm(){
 
     if(prepared_flag){
       // std::cout << "准备就绪" << std::endl;
-      if(x_error_connect > 0.5){
+      if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
 
-        if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 0.1 && orientation_error > -0.1){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect, kp_con - 150, kd_con, d_x);
+        if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 8 && orientation_error > -8){ //或者需要航向偏差小于一定值
+          connect_pwm_x = minimize(x_error_connect - 1.0, 200, kd_con, d_x);//测试
         }
         else{ 
           //横向偏差太大不能前进
@@ -205,8 +205,8 @@ int OtterController::latching_algorithm(){
     }
 
     else{
-      connect_pwm_x = minimize(x_error_connect - 0.8, kp_con, kd_con, d_x); // 改变目标距离
-      if(x_error_connect > 1){
+      connect_pwm_x = minimize(x_error_connect - 2.0, 200, kd_con, d_x); // 在原来基础上退后1m重新对接
+      if((x_error_connect - 2.0) > 0){
         prepared_flag = 1;
       }
     }

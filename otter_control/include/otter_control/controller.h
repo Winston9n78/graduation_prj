@@ -113,7 +113,7 @@ private:
 
   double point_now_x, point_now_y, point_now_z;
   double point_set_x = 1.5, point_set_y = 1.5, point_set_z;
-  double stick_to_point_pwm_x, stick_to_point_pwm_y;
+  double stick_to_point_pwm_x = 0, stick_to_point_pwm_y = 0;
 
   int16_t keyboard_val_speed = 0, keyboard_val_turning = 0, keyboard_start = 1, keyboard_move = 0;
   int16_t keyboard_con_mode = 0, aoto_con_mode = -1;
