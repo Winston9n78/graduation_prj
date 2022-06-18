@@ -17,6 +17,8 @@
 
 #include <sensor_msgs/Imu.h>
 
+#include <otter_control/usv_status.h>
+
 
 
 OtterController::OtterController() : T(3, 2)
@@ -28,6 +30,8 @@ OtterController::OtterController() : T(3, 2)
 
   m_headPub = nh.advertise<std_msgs::Float32>("head_thrust_cmd", 10);
   m_tailPub = nh.advertise<std_msgs::Float32>("tail_thrust_cmd", 10);
+
+  usv_status_pub = nh.advertise<otter_control::usv_status>("usv_status",1);
 
   ros::Subscriber sub = nh.subscribe("speed_heading", 1000, &OtterController::inputCallback, this); //获得速度和期望航向角
   ros::Subscriber sub_imu = nh.subscribe("imu", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
@@ -117,6 +121,20 @@ OtterController::OtterController() : T(3, 2)
     thrust_ouput_limit(right_output);
     thrust_ouput_limit(head_output);
     thrust_ouput_limit(tail_output);
+
+    // otter_control::usv_status status;
+    // status.force_head = head_output;
+    // status.force_left = left_output;
+    // status.force_right = right_output;
+    // status.force_tail = tail_output;
+    // status.orientation_pitch = pitch;
+    // status.orientation_roll = roll;
+    // status.orientation_yaw = yaw;
+    // status.position_x = camera_y;
+    // status.position_y = camera_z;
+    // status.position_z = camera_x;
+
+
   
     std_msgs::Float32 left;
     left.data = static_cast<float>(left_output);
@@ -131,6 +149,7 @@ OtterController::OtterController() : T(3, 2)
     m_rightPub.publish(right);
     m_headPub.publish(head);
     m_tailPub.publish(tail);
+    // usv_status_pub.publish(status);
 
     // 方便调试直接在这里输出信息了
     // ROS_INFO_STREAM("batterty_voltage: " << voltage);
@@ -184,7 +203,7 @@ int OtterController::latching_algorithm(){
 
   connect_pwm_y = minimize(y_error_connect, kp_con, kd_con, d_y);
   connect_pwm_fi = minimize(camera_fi, 0, 0, d_fi);
-  connect_pwm_orientation = minimize(orientation_error, kp_con_orient, kd_con_orient, d_o);
+  connect_pwm_orientation = minimize(camera_fi - camera_pitch, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 
     if(prepared_flag){
@@ -192,7 +211,7 @@ int OtterController::latching_algorithm(){
       if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
 
         if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 8 && orientation_error > -8){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect - 1.0, 200, kd_con, d_x);//测试
+          connect_pwm_x = minimize(x_error_connect - 1.0, 0, kd_con, d_x);//测试
         }
         else{ 
           //横向偏差太大不能前进
@@ -205,7 +224,7 @@ int OtterController::latching_algorithm(){
     }
 
     else{
-      connect_pwm_x = minimize(x_error_connect - 2.0, 200, kd_con, d_x); // 在原来基础上退后1m重新对接
+      connect_pwm_x = minimize(x_error_connect - 2.0, 0, kd_con, d_x); // 在原来基础上退后1m重新对接
       if((x_error_connect - 2.0) > 0){
         prepared_flag = 1;
       }
@@ -240,7 +259,6 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     tf::Quaternion quat;
     (tf::Quaternion&)quat  = tf::Quaternion(transform.getRotation()[0],transform.getRotation()[1],
                                               transform.getRotation()[2],transform.getRotation()[3]);
-    double roll, pitch, yaw,fi;
     tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
     roll = roll/3.14159*180;
     pitch = pitch/3.14159*180;

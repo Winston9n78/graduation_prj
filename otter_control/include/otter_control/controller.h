@@ -131,6 +131,8 @@ private:
 
   double target_z = 0.5;
 
+  double roll, pitch, yaw,fi;
+
   double voltage = 0;
 
   tf::StampedTransform transform; // my_bundle里的坐标变换关系
@@ -144,6 +146,7 @@ private:
   ros::Publisher m_rightPub;
   ros::Publisher m_headPub;
   ros::Publisher m_tailPub;
+  ros::Publisher usv_status_pub;
 };
 
 #endif
