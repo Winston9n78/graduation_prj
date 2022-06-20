@@ -130,9 +130,9 @@ OtterController::OtterController() : T(3, 2)
     status.orientation_pitch = pitch;
     status.orientation_roll = roll;
     status.orientation_yaw = yaw;
-    // status.position_x = camera_y;
-    // status.position_y = camera_z;
-    // status.position_z = camera_x;
+    status.position_x = camera_y;
+    status.position_y = camera_z;
+    status.position_z = camera_x;
 
 
   
