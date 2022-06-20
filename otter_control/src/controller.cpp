@@ -122,14 +122,14 @@ OtterController::OtterController() : T(3, 2)
     thrust_ouput_limit(head_output);
     thrust_ouput_limit(tail_output);
 
-    // otter_control::usv_status status;
+    otter_control::usv_status status;
     // status.force_head = head_output;
     // status.force_left = left_output;
     // status.force_right = right_output;
     // status.force_tail = tail_output;
-    // status.orientation_pitch = pitch;
-    // status.orientation_roll = roll;
-    // status.orientation_yaw = yaw;
+    status.orientation_pitch = pitch;
+    status.orientation_roll = roll;
+    status.orientation_yaw = yaw;
     // status.position_x = camera_y;
     // status.position_y = camera_z;
     // status.position_z = camera_x;
@@ -149,7 +149,7 @@ OtterController::OtterController() : T(3, 2)
     m_rightPub.publish(right);
     m_headPub.publish(head);
     m_tailPub.publish(tail);
-    // usv_status_pub.publish(status);
+    usv_status_pub.publish(status);
 
     // 方便调试直接在这里输出信息了
     // ROS_INFO_STREAM("batterty_voltage: " << voltage);
