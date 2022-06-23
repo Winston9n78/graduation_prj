@@ -178,7 +178,9 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-
+    std::cout << "dx: " << d_x << std::endl;
+    std::cout << "dy: " << d_y << std::endl;
+    std::cout << "do: " << d_o << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
     ros::spinOnce();
@@ -202,7 +204,7 @@ int OtterController::latching_algorithm(){
   static bool prepared_flag = 0;
 
   connect_pwm_y = minimize(y_error_connect, kp_con, kd_con, d_y);
-  connect_pwm_orientation = minimize(camera_fi - camera_pitch, kp_con_orient, kd_con_orient, d_o);
+  connect_pwm_orientation = minimize(orientation_error, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 
     if(prepared_flag){
@@ -210,7 +212,7 @@ int OtterController::latching_algorithm(){
       if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
 
         if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 8 && orientation_error > -8){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect - 1.0, 600, 0, d_x);//测试
+          connect_pwm_x = minimize(x_error_connect - 1.0, kp_stick, kd_stick, d_x);//测试
         }
         else{ 
           //横向偏差太大不能前进
@@ -223,13 +225,13 @@ int OtterController::latching_algorithm(){
     }
 
     else{
-      connect_pwm_x = minimize(x_error_connect - 1.0, 600, 0, d_x); // 在原来基础上退后1m重新对接
+      connect_pwm_x = minimize(x_error_connect - 1.0, kp_stick, kd_stick, d_x); // 在原来基础上退后1m重新对接
       if((x_error_connect - 2.0) > 0){
         prepared_flag = 1;
       }
     }
+    connect_pwm_x = minimize(x_error_connect - 1.0, kp_stick, kd_stick, d_x);//测试
   }
-
   else{
     connect_pwm_x = 0;
     connect_pwm_orientation = 0;
@@ -267,8 +269,8 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
 
     y_error_connect = camera_y; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
     x_error_connect = camera_z; // 0.5 距离
-    orientation_error = camera_pitch; // 旋转角偏差
     camera_fi = atan2(y_error_connect, x_error_connect) / 3.14159 * 180;
+    orientation_error = camera_fi - camera_pitch; // 旋转角偏差
 
     // std::cout<<"position_x: "<<camera_x<<std::endl;
     // std::cout<<"position_y: "<<camera_y<<std::endl;
@@ -283,12 +285,12 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     d_y = y_error_connect - y_error_last;
     d_x = x_error_connect - x_error_last;
     d_o = orientation_error - o_error_last;
-    d_fi = camera_fi - camera_fi_last;
+    // d_fi = camera_fi - camera_fi_last;
 
     x_error_last = x_error_connect;
     y_error_last = y_error_connect;
     o_error_last = orientation_error;
-    camera_fi_last = camera_fi;
+    // camera_fi_last = camera_fi;
 
     flag_missed_target = false;
   }
@@ -300,6 +302,9 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     y_error_last = 0;
     o_error_last = 0;
     flag_missed_target = true;
+    d_y = 0;
+    d_x = 0;
+    d_o = 0;
   }
 
   // std::cout << "connect_pwm_x = " << connect_pwm_x << std::endl;
@@ -550,7 +555,7 @@ void OtterController::get_control_param(){
   ros::param::get("/OtterController/Connect_I",ki_con);
   ros::param::get("/OtterControllerr/Connect_D",kd_con);
   ros::param::get("/OtterController/Connect_P_orien",kp_con_orient);
-  ros::param::get("/OtterController/Connect_I_orien",kd_con_orient);
+  ros::param::get("/OtterController/Connect_D_orien",kd_con_orient);
   ros::param::get("/OtterController/T_P",Kp_psi);
   ros::param::get("/OtterController/T_I",Ki_psi);
   ros::param::get("/OtterController/T_D",Kd_psi);

@@ -126,7 +126,7 @@ private:
   bool Arrive_master, Arrive_slave;
 
   double y_error_connect, x_error_connect, orientation_error;
-  double d_y,d_x,d_o,d_fi;
+  double d_y = 0,d_x = 0,d_o = 0,d_fi = 0;
   double x_error_stick, y_error_stick;
 
   double target_z = 0.5;
