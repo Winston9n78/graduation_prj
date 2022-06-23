@@ -111,11 +111,11 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge + tauYaw  + connect_pwm_orientation + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + tauSurge - tauYaw + connect_pwm_orientation - connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge + tauYaw  - connect_pwm_orientation + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead + tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_flag * stick_to_point_pwm_y;
 
-    double head_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
-    double tail_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
+    double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
+    double tail_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
@@ -202,7 +202,6 @@ int OtterController::latching_algorithm(){
   static bool prepared_flag = 0;
 
   connect_pwm_y = minimize(y_error_connect, kp_con, kd_con, d_y);
-  connect_pwm_fi = minimize(camera_fi, 0, 0, d_fi);
   connect_pwm_orientation = minimize(camera_fi - camera_pitch, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 
@@ -211,7 +210,7 @@ int OtterController::latching_algorithm(){
       if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
 
         if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 8 && orientation_error > -8){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect - 1.0, 0, kd_con, d_x);//测试
+          connect_pwm_x = minimize(x_error_connect - 1.0, 600, 0, d_x);//测试
         }
         else{ 
           //横向偏差太大不能前进
@@ -224,7 +223,7 @@ int OtterController::latching_algorithm(){
     }
 
     else{
-      connect_pwm_x = minimize(x_error_connect - 2.0, 0, kd_con, d_x); // 在原来基础上退后1m重新对接
+      connect_pwm_x = minimize(x_error_connect - 1.0, 600, 0, d_x); // 在原来基础上退后1m重新对接
       if((x_error_connect - 2.0) > 0){
         prepared_flag = 1;
       }
@@ -264,9 +263,9 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     pitch = pitch/3.14159*180;
     yaw = yaw/3.14159*180;
 
-    camera_pitch = pitch;
+    camera_pitch = -pitch;
 
-    y_error_connect = camera_x; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
+    y_error_connect = camera_y; // 0 左右偏差 // error变量中的x和y是和对接示意图对应的
     x_error_connect = camera_z; // 0.5 距离
     orientation_error = camera_pitch; // 旋转角偏差
     camera_fi = atan2(y_error_connect, x_error_connect) / 3.14159 * 180;
