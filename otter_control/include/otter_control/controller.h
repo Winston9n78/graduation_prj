@@ -73,9 +73,12 @@ private:
   double damp_u = 20.0; // xU
 
   //connected controller
-  double kp_con = 0;
-  double ki_con = 0;
-  double kd_con = 0;
+  double kp_con_x = 0;
+  double kd_con_x = 0;
+
+  double kp_con_y = 0;
+  double kd_con_y = 0;
+
   double kp_con_orient = 0;
   double kd_con_orient = 0;
   //点保持参数

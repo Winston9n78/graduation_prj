@@ -112,7 +112,7 @@ OtterController::OtterController() : T(3, 2)
 #endif
 
     double left_output = output_dead + tauSurge + tauYaw  - connect_pwm_orientation + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead + tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double right_output = output_dead - tauSurge + tauYaw - connect_pwm_orientation - connect_pwm_x + stick_flag * stick_to_point_pwm_y;
 
     double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
     double tail_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
@@ -134,8 +134,6 @@ OtterController::OtterController() : T(3, 2)
     status.position_y = camera_z;
     status.position_z = camera_x;
 
-
-  
     std_msgs::Float32 left;
     left.data = static_cast<float>(left_output);
     std_msgs::Float32 right;
@@ -178,9 +176,9 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "dx: " << d_x << std::endl;
-    std::cout << "dy: " << d_y << std::endl;
-    std::cout << "do: " << d_o << std::endl;
+    // std::cout << "dx: " << d_x << std::endl;
+    // std::cout << "dy: " << d_y << std::endl;
+    // std::cout << "do: " << d_o << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
     ros::spinOnce();
@@ -203,7 +201,7 @@ int OtterController::latching_algorithm(){
 
   static bool prepared_flag = 0;
 
-  connect_pwm_y = minimize(y_error_connect, kp_con, kd_con, d_y);
+  connect_pwm_y = minimize(y_error_connect, kp_con_y, kd_con_y, d_y);
   connect_pwm_orientation = minimize(orientation_error, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 
@@ -212,7 +210,7 @@ int OtterController::latching_algorithm(){
       if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
 
         if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 8 && orientation_error > -8){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect - 1.0, kp_stick, kd_stick, d_x);//测试
+          connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
         }
         else{ 
           //横向偏差太大不能前进
@@ -225,7 +223,7 @@ int OtterController::latching_algorithm(){
     }
 
     else{
-      connect_pwm_x = minimize(x_error_connect - 1.0, kp_stick, kd_stick, d_x); // 在原来基础上退后1m重新对接
+      connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x); // 在原来基础上退后1m重新对接
       if((x_error_connect - 2.0) > 0){
         prepared_flag = 1;
       }
@@ -551,9 +549,10 @@ double OtterController::getYaw()
 
 void OtterController::get_control_param(){
 
-  ros::param::get("/OtterController/Connect_P",kp_con);
-  ros::param::get("/OtterController/Connect_I",ki_con);
-  ros::param::get("/OtterControllerr/Connect_D",kd_con);
+  ros::param::get("/OtterController/Connect_P_y",kp_con_y);
+  ros::param::get("/OtterControllerr/Connect_D_y",kd_con_y);
+  ros::param::get("/OtterController/Connect_P_x",kp_con_x);
+  ros::param::get("/OtterControllerr/Connect_D_x",kd_con_x);
   ros::param::get("/OtterController/Connect_P_orien",kp_con_orient);
   ros::param::get("/OtterController/Connect_D_orien",kd_con_orient);
   ros::param::get("/OtterController/T_P",Kp_psi);
@@ -562,7 +561,6 @@ void OtterController::get_control_param(){
   ros::param::get("/OtterController/V_P",Kp_u);
   ros::param::get("/OtterController/V_I",Ki_u);
   ros::param::get("/OtterController/Stick_P",kp_stick);
-  ros::param::get("/OtterController/Stick_I",ki_stick);
   ros::param::get("/OtterController/Stick_D",kd_stick);
 
 }
