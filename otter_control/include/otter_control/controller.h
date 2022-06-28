@@ -10,6 +10,7 @@
 #include <usv_msgs/SpeedCourse.h>
 
 #include <std_msgs/Float32.h>
+#include <std_msgs/Bool.h>
 
 #include <eigen3/Eigen/Core>
 
@@ -138,6 +139,8 @@ private:
 
   double voltage = 0;
 
+  bool is_ok = false;
+
   tf::StampedTransform transform; // my_bundle里的坐标变换关系
 
   geometry_msgs::PoseStamped Point_set;
@@ -151,6 +154,7 @@ private:
   ros::Publisher m_tailPub;
   ros::Publisher usv_status_pub;
   ros::Publisher heading_angle_pub;
+  ros::Publisher ok_to_latch;
 };
 
 #endif

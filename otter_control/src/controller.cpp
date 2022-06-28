@@ -31,6 +31,8 @@ OtterController::OtterController() : T(3, 2)
   m_headPub = nh.advertise<std_msgs::Float32>("head_thrust_cmd", 10);
   m_tailPub = nh.advertise<std_msgs::Float32>("tail_thrust_cmd", 10);
 
+  ok_to_latch = nh.advertise<std_msgs::Bool>("is_ok", 10);
+
   usv_status_pub = nh.advertise<otter_control::usv_status>("usv_status",1);
   heading_angle_pub = nh.advertise<std_msgs::Float32>("heading_angle",1);
   ros::Subscriber sub = nh.subscribe("speed_heading", 1000, &OtterController::inputCallback, this); //获得速度和期望航向角
@@ -68,13 +70,13 @@ OtterController::OtterController() : T(3, 2)
     
     try{
         //得到坐标odom和坐标base_link之间的关系
-      listener.waitForTransform("my_bundle", "camera", ros::Time(0), ros::Duration(3.0));
+      // listener.waitForTransform("my_bundle", "camera", ros::Time(0), ros::Duration(3.0));
       listener.lookupTransform("my_bundle", "camera",
                                ros::Time(0), transform);
     }
     catch (tf::TransformException &ex) {
       // ROS_ERROR("%s",ex.what());
-      ros::Duration(1.0).sleep();
+      ros::Duration(0).sleep();
     }
 
     /*
@@ -142,12 +144,16 @@ OtterController::OtterController() : T(3, 2)
     head.data = static_cast<float>(head_output);
     std_msgs::Float32 tail;
     tail.data = static_cast<float>(tail_output);
+    std_msgs::Bool is_ok_;
+    is_ok_.data = static_cast<bool>(is_ok);
 
     m_leftPub.publish(left);
     m_rightPub.publish(right);
     m_headPub.publish(head);
     m_tailPub.publish(tail);
     usv_status_pub.publish(status);
+    ok_to_latch.publish(is_ok_);
+
 
     // 方便调试直接在这里输出信息了
     // ROS_INFO_STREAM("batterty_voltage: " << voltage);
