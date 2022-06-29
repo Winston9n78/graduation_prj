@@ -11,7 +11,8 @@
 
 #include <cmath>
 
-#include <nlink_parser/LinktrackAnchorframe0.h>
+// #include <nlink_parser/LinktrackAnchorframe0.h>
+#include <nlink_parser/LinktrackTagframe0.h>
 
 #include <apriltags2_ros/AprilTagDetectionArray.h>
 
@@ -38,7 +39,7 @@ OtterController::OtterController() : T(3, 2)
   ros::Subscriber sub = nh.subscribe("speed_heading", 1000, &OtterController::inputCallback, this); //获得速度和期望航向角
   ros::Subscriber sub_imu = nh.subscribe("imu", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
   // ros::Subscriber sub_voltage = nh.subscribe("voltage", 1000, &OtterController::voltage_Callback, this);
-//3400 14v
+  //3400 14v
   ros::Subscriber sub_ariltag = nh.subscribe("/tag_detections", 1, &OtterController::apriltag_Callback, this);
 
   ros::Subscriber goal_Sub = nh.subscribe("goal_point", 1000, &OtterController::setPoint, this); //从这个话题中得到一个坐标，然后回调，存到标准类型的向量里，然后使用。
@@ -46,7 +47,7 @@ OtterController::OtterController() : T(3, 2)
   // ros::Subscriber subImu = nh.subscribe("imu/data", 1000, &OtterController::imuCallback, this);
 
   ros::Subscriber sub_nlink =
-      nh.subscribe("/nlink_linktrack_anchorframe0", 1000, &OtterController::tagframe0Callback, this);//this的作用是什么
+      nh.subscribe("/nlink_linktrack_tagframe0", 1000, &OtterController::tagframe0Callback, this);//this的作用是什么
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
   tf::TransformListener listener;
@@ -213,9 +214,10 @@ int OtterController::latching_algorithm(){
 
     if(prepared_flag){
       // std::cout << "准备就绪" << std::endl;
+      // 对接测试的时候这个条件应该是对接点在往前一点的距离，肯定不是刚刚好那个点作为条件
       if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
 
-        if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 8 && orientation_error > -8){ //或者需要航向偏差小于一定值
+        if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 5 && orientation_error > -5){ //或者需要航向偏差小于一定值
           connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
         }
         else{ 
@@ -226,6 +228,8 @@ int OtterController::latching_algorithm(){
       else{ //向前过头
         prepared_flag = 0;
       }
+
+      //if(x,y,fi)都小于，则is_ok = 1
     }
 
     else{
@@ -234,7 +238,7 @@ int OtterController::latching_algorithm(){
         prepared_flag = 1;
       }
     }
-    connect_pwm_x = minimize(x_error_connect - 1.0, kp_stick, kd_stick, d_x);//测试
+    connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
   }
   else{
     connect_pwm_x = 0;
@@ -393,19 +397,31 @@ void OtterController::thrust_ouput_limit(double& output_value){
 
 }
 
-void OtterController::tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg){
+void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &msg){
 
   static uint8_t i,j;
   double tmp[10] = {0};
   double tmp_v[10] = {0};
   static double sum, sum_v;
+  static double tag0_x,tag0_y,tag0_z,tag1_x,tag1_y,tag1_z;
 
-  double delta_y = msg.nodes[0].pos_3d[1] - msg.nodes[1].pos_3d[1];
-  double delta_x = msg.nodes[0].pos_3d[0] - msg.nodes[1].pos_3d[0];
+  if(msg.id == 0){
+    tag0_y = msg.pos_3d[1];
+    tag0_x = msg.pos_3d[0];
+    tag0_z = msg.pos_3d[2];
+  }
+  else{
+    tag1_y = msg.pos_3d[1];
+    tag1_x = msg.pos_3d[0];
+    tag1_z = msg.pos_3d[2];
+  }
+  // 0在前面
+  double delta_y = tag0_y - tag1_y;
+  double delta_x = tag0_x - tag1_x;
 
-  point_now_x = msg.nodes[0].pos_3d[0];
-  point_now_y = msg.nodes[0].pos_3d[1];
-  point_now_z = msg.nodes[0].pos_3d[2];
+  point_now_x = tag0_x;
+  point_now_y = tag0_y;
+  point_now_z = tag0_z;
 
   heading_angle =  (90 - (atan2(delta_y, delta_x) / 3.14) * 180);
   
@@ -413,11 +429,11 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackAnchorframe
   heading_.data = static_cast<float>(heading_angle);
   heading_angle_pub.publish((std_msgs::Float32)heading_);
   
-  float straight_line = pow((msg.nodes[0].pos_3d[1]-record_pos_y_node1),2) + pow((msg.nodes[0].pos_3d[0]-record_pos_x_node1),2);
+  float straight_line = pow((tag0_y-record_pos_y_node1),2) + pow((tag0_x-record_pos_x_node1),2);
   //sqrt(straight_line)/0.1;
 
-  record_pos_x_node1 = msg.nodes[0].pos_3d[0];
-  record_pos_y_node1 = msg.nodes[0].pos_3d[1];
+  record_pos_x_node1 = tag0_x;
+  record_pos_y_node1 = tag0_y;
 
 }
 

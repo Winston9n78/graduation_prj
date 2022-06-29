@@ -53,6 +53,8 @@ int main(int argc, char** argv){
             latch_signal.publish(control_cmd);
         }
         
+        latch_signal.publish(control_cmd);
+        
         ros::spinOnce();
         rate.sleep();
     }

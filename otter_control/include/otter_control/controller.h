@@ -14,7 +14,8 @@
 
 #include <eigen3/Eigen/Core>
 
-#include <nlink_parser/LinktrackAnchorframe0.h>
+// #include <nlink_parser/LinktrackAnchorframe0.h>
+#include <nlink_parser/LinktrackTagframe0.h>
 
 #include <apriltags2_ros/AprilTagDetectionArray.h>
 
@@ -43,7 +44,7 @@ private:
 
   void imu_Callback(const sensor_msgs::Imu& msg);
   void voltage_Callback(const std_msgs::Float32& msg);
-  void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg);
+  void tagframe0Callback(const nlink_parser::LinktrackTagframe0 &msg);
   void thrust_ouput_limit(double& output_value);
 
   void keyboard_Callback(const std_msgs::Int32MultiArray& msg);

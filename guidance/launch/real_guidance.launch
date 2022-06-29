@@ -28,7 +28,7 @@
   -->
 
   <!--nlink_passer-->
-  <include file="$(find nlink_parser)/launch/linktrack.launch" />
+  <!-- <include file="$(find nlink_parser)/launch/linktrack.launch" /> -->
   
   <!--esp32-->
   <!-- <node name="esp32_node" pkg="rosserial_python" type="serial_node.py" output="screen"/> -->
