@@ -15,14 +15,16 @@ int main(int argc, char** argv){
 
     ros::NodeHandle nh;
 
-    ros::Publisher latch_signal;
+    ros::Publisher latch_signal, is_lock_ok;
 
-    ros::Subscriber status_sub = nh.subscribe("is_ok", 10, &status_callback);
+    ros::Subscriber status_sub = nh.subscribe("is_ok", 1, &status_callback);
     latch_signal = nh.advertise<std_msgs::Int32MultiArray>("latch_command", 1);
+    is_lock_ok = nh.advertise<std_msgs::Bool>("is_lock_ok", 1);
     std_msgs::Int32MultiArray control_cmd;
+    std_msgs::Bool done_;
     
     // a锁与b锁
-    int up_a = 0, down_a = 1, up_b = 2, down_b = 3;
+    int a_up = 0, a_down = 1, b_up = 2, b_down = 3;
     //设置默认状态打开钩子
     control_cmd.data.push_back(0);
     control_cmd.data.push_back(0);
@@ -36,25 +38,26 @@ int main(int argc, char** argv){
     double deltaTime = 1.0 / frequency;
     ros::Rate rate(frequency);
     while (nh.ok()) {
-        
         if(is_ok && !done){ // 勾住
-
-            control_cmd.data[up_a] = 1;
+            control_cmd.data[a_up] = 1;
             latch_signal.publish(control_cmd);
             //延时操作,延时前的状态也需要发布
             ros::Duration(0.5).sleep();
-            control_cmd.data[down_a] = 1;
+            control_cmd.data[a_down] = 1;
             latch_signal.publish(control_cmd);
+            ros::Duration(0.5).sleep();
             done = true;
         }
         else if(!is_ok && done){ // 勾住失败而打开
-            control_cmd.data[up_a] = 0;
-            control_cmd.data[down_a] = 0;
+            control_cmd.data[a_up] = 0;
+            control_cmd.data[a_down] = 0;
+            done = false;
             latch_signal.publish(control_cmd);
         }
-        
+        done_.data = done;
+        is_lock_ok.publish(done_);
         latch_signal.publish(control_cmd);
-        
+
         ros::spinOnce();
         rate.sleep();
     }

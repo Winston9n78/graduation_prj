@@ -43,8 +43,8 @@ OtterController::OtterController() : T(3, 2)
   ros::Subscriber sub_ariltag = nh.subscribe("/tag_detections", 1, &OtterController::apriltag_Callback, this);
 
   ros::Subscriber goal_Sub = nh.subscribe("goal_point", 1000, &OtterController::setPoint, this); //从这个话题中得到一个坐标，然后回调，存到标准类型的向量里，然后使用。
-  // ros::Subscriber subSpeed = nh.subscribe("gps/vel", 1000, &OtterController::speedCallback, this); //
-  // ros::Subscriber subImu = nh.subscribe("imu/data", 1000, &OtterController::imuCallback, this);
+  
+  ros::Subscriber subImu = nh.subscribe("is_lock_ok", 1, &OtterController::lock_statusCB, this);
 
   ros::Subscriber sub_nlink =
       nh.subscribe("/nlink_linktrack_tagframe0", 1000, &OtterController::tagframe0Callback, this);//this的作用是什么
@@ -58,6 +58,7 @@ OtterController::OtterController() : T(3, 2)
   // dynamic_reconfigure::Server<parameter_set::drConfig>::CallbackType cbType;
   // cbType = boost::bind(&OtterController::cb,_1,_2);
   // server.setCallback(cbType);
+  ros::Timer timer = nh.createTimer(ros::Duration(0.1), &OtterController::callback, this);
 
   double frequency = 100.0;
   double deltaTime = 1.0 / frequency;
@@ -183,9 +184,9 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    // std::cout << "dx: " << d_x << std::endl;
-    // std::cout << "dy: " << d_y << std::endl;
-    // std::cout << "do: " << d_o << std::endl;
+    std::cout << "dx: " << kd_con_x*d_x << std::endl;
+    std::cout << "dy: " << kd_con_y*d_y << std::endl;
+    std::cout << "do: " << kd_con_orient*d_o << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
     ros::spinOnce();
@@ -206,39 +207,76 @@ return 1：对接成功
 */
 int OtterController::latching_algorithm(){
 
-  static bool prepared_flag = 0;
+  static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
 
   connect_pwm_y = minimize(y_error_connect, kp_con_y, kd_con_y, d_y);
   connect_pwm_orientation = minimize(orientation_error, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
+/***********************************************************************************/
+    // if(prepared_flag){
+    //   // std::cout << "准备就绪" << std::endl;
+    //   // 对接测试的时候这个条件应该是对接点在往前一点的距离，肯定不是刚刚好那个点作为条件
+    //   if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
 
-    if(prepared_flag){
-      // std::cout << "准备就绪" << std::endl;
-      // 对接测试的时候这个条件应该是对接点在往前一点的距离，肯定不是刚刚好那个点作为条件
-      if((x_error_connect - 1.0) > 0){ //二维码和摄像头对接距离为1m，如果是只用二维码测试的话可以小点
+    //     if(y_error_connect < 0.05 && y_error_connect > -0.05 && orientation_error < 5 && orientation_error > -5){ //或者需要航向偏差小于一定值
+    //       connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
+    //     }
+    //     else{ 
+    //       //横向偏差太大不能前进
+    //       connect_pwm_x = 0;
+    //     }
+    //   }
+    //   else{ //向前过头
+    //     prepared_flag = 0;
+    //   }
+    //   //if(x,y,fi)都小于，则is_ok = 1
+    // }
 
-        if(y_error_connect < 0.05 &&  y_error_connect > -0.05 && orientation_error < 5 && orientation_error > -5){ //或者需要航向偏差小于一定值
-          connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
-        }
-        else{ 
-          //横向偏差太大不能前进
-          connect_pwm_x = 0;
-        }
-      }
-      else{ //向前过头
-        prepared_flag = 0;
-      }
-
-      //if(x,y,fi)都小于，则is_ok = 1
-    }
-
-    else{
-      connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x); // 在原来基础上退后1m重新对接
-      if((x_error_connect - 2.0) > 0){
-        prepared_flag = 1;
-      }
-    }
+    // else{
+    //   connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x); // 在原来基础上退后1m重新对接
+    //   if((x_error_connect - 2.0) > 0){
+    //     prepared_flag = 1;
+    //   }
+    // }
     connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
+    // if((x_error_connect - 1.0) > 0.15){
+    //   connect_pwm_x = connect_pwm_x > 100 ? 100 : connect_pwm_x;
+    //   connect_pwm_x = connect_pwm_x < -100 ? -100 : connect_pwm_x;
+    // }
+/*******************************对准测试用****************************************************/
+    // if(!done_flag){
+    //   if(!back_flag){
+    //     connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);
+    //     if((x_error_connect - 1.0) < 0.05 && (x_error_connect - 1.0) > -0.05) is_ok = 1;//锁开始闭合
+    //   }
+    //   if(is_lock_ok){
+    //     connect_pwm_x = minimize(x_error_connect - 1.5, kp_con_x, kd_con_x, d_x);
+    //     back_flag = 1;
+    //     start = 1; //
+    //   }
+
+    //   if(is_lock_ok && back_flag && count > 30){
+    //     if(x_error_connect - 1.2 < 0){
+    //       done_flag = 1;/*退出对接程序*/
+    //     }
+    //     /*对接失败*/
+    //     else if((x_error_connect - 1.5) < 0.05 && (x_error_connect - 1.5) > -0.05){ 
+    //       back_flag = 0; /*后退标志位置0*/
+    //       is_ok = 0; /*锁打开*/
+    //       start = 0;
+    //       count = 0;
+    //     }
+    //   }
+    // }
+
+    // else{
+    //   connect_pwm_y = 0;
+    //   connect_pwm_orientation = 0;
+    //   connect_pwm_x = 0;
+    // }
+
+/*******************************对接*************************************************/
+
   }
   else{
     connect_pwm_x = 0;
@@ -569,12 +607,21 @@ double OtterController::getYaw()
   return tf2::getYaw(tfStamped.transform.rotation);
 }
 
+void OtterController::lock_statusCB(const std_msgs::Bool& msg){
+  is_lock_ok = msg.data;
+}
+
+void OtterController::callback(const ros::TimerEvent& event)
+{
+  if(start) count++;
+}
+
 void OtterController::get_control_param(){
 
   ros::param::get("/OtterController/Connect_P_y",kp_con_y);
-  ros::param::get("/OtterControllerr/Connect_D_y",kd_con_y);
+  ros::param::get("/OtterController/Connect_D_y",kd_con_y);
   ros::param::get("/OtterController/Connect_P_x",kp_con_x);
-  ros::param::get("/OtterControllerr/Connect_D_x",kd_con_x);
+  ros::param::get("/OtterController/Connect_D_x",kd_con_x);
   ros::param::get("/OtterController/Connect_P_orien",kp_con_orient);
   ros::param::get("/OtterController/Connect_D_orien",kd_con_orient);
   ros::param::get("/OtterController/T_P",Kp_psi);

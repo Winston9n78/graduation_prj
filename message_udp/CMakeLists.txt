@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  otter_control
 )
 
 ## System dependencies are found with CMake's conventions
@@ -157,7 +158,7 @@ include_directories(
 add_executable(message_udp src/message_udp.cpp)
 target_link_libraries(message_udp ${catkin_LIBRARIES})
 add_dependencies(message_udp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
+add_dependencies(message_udp otter_control_generate_messages_cpp)
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 

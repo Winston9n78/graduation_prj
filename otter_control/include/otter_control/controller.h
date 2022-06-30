@@ -51,6 +51,9 @@ private:
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
 
   void setPoint(const geometry_msgs::PoseStamped& point);
+
+  void lock_statusCB(const std_msgs::Bool& msg);
+  void callback(const ros::TimerEvent& event);
   
   int stick_to_point();
   int latching_algorithm();
@@ -140,7 +143,8 @@ private:
 
   double voltage = 0;
 
-  bool is_ok = false;
+  bool is_ok = false, is_lock_ok = false;
+  int start = 0, count = 0;
 
   tf::StampedTransform transform; // my_bundle里的坐标变换关系
 
