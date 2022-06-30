@@ -239,10 +239,7 @@ int OtterController::latching_algorithm(){
     //   }
     // }
     connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
-    // if((x_error_connect - 1.0) > 0.15){
-    //   connect_pwm_x = connect_pwm_x > 100 ? 100 : connect_pwm_x;
-    //   connect_pwm_x = connect_pwm_x < -100 ? -100 : connect_pwm_x;
-    // }
+
 /*******************************对准测试用****************************************************/
     // if(!done_flag){
     //   if(!back_flag){
@@ -251,8 +248,8 @@ int OtterController::latching_algorithm(){
     //   }
     //   if(is_lock_ok){
     //     connect_pwm_x = minimize(x_error_connect - 1.5, kp_con_x, kd_con_x, d_x);
-    //     back_flag = 1;
-    //     start = 1; //
+    //     back_flag = 1; /*正在后退*/
+    //     start = 1; /*开始计时*/
     //   }
 
     //   if(is_lock_ok && back_flag && count > 30){
@@ -263,8 +260,8 @@ int OtterController::latching_algorithm(){
     //     else if((x_error_connect - 1.5) < 0.05 && (x_error_connect - 1.5) > -0.05){ 
     //       back_flag = 0; /*后退标志位置0*/
     //       is_ok = 0; /*锁打开*/
-    //       start = 0;
-    //       count = 0;
+    //       start = 0; /*关闭计时*/
+    //       count = 0; /*清空计数*/
     //     }
     //   }
     // }

@@ -39,17 +39,17 @@ int main(int argc, char** argv){
     ros::Rate rate(frequency);
     while (nh.ok()) {
         if(is_ok && !done){ // 勾住
-            control_cmd.data[a_up] = 1;
+            control_cmd.data[a_up] = 1;/*勾住流程电平还不确定的，这里暂时示范*/
             latch_signal.publish(control_cmd);
-            //延时操作,延时前的状态也需要发布
-            ros::Duration(0.5).sleep();
+            /*延时操作,延时前的状态也需要发布*/
+            ros::Duration(3).sleep(); /*延迟3秒再。。。*/
             control_cmd.data[a_down] = 1;
             latch_signal.publish(control_cmd);
-            ros::Duration(0.5).sleep();
-            done = true;
+            ros::Duration(3).sleep();/*延迟3秒表示完全勾住再完成*/
+            done = true; /*勾住动作完成*/
         }
         else if(!is_ok && done){ // 勾住失败而打开
-            control_cmd.data[a_up] = 0;
+            control_cmd.data[a_up] = 0; /*打开流程电平还不确定的，这里暂时示范*/
             control_cmd.data[a_down] = 0;
             done = false;
             latch_signal.publish(control_cmd);
