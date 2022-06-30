@@ -20,7 +20,7 @@
 
 #include <otter_control/usv_status.h>
 
-
+#include <queue>
 
 OtterController::OtterController() : T(3, 2)
 {
@@ -294,6 +294,11 @@ int OtterController::latching_algorithm(){
 void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg){
   
   static double x_error_last, y_error_last, o_error_last, camera_fi_last;
+
+  std::queue<double> moving_avg_x, tmp_x, moving_avg_y, tmp_y, moving_avg_o, tmp_o;
+  
+  static int count = 0;
+
   if(msg.detections.size() != 0){
 
     camera_x = transform.getOrigin().x();
@@ -315,15 +320,45 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     camera_fi = atan2(y_error_connect, x_error_connect) / 3.14159 * 180;
     orientation_error = camera_fi - camera_pitch; // 旋转角偏差
 
-    // std::cout<<"position_x: "<<camera_x<<std::endl;
-    // std::cout<<"position_y: "<<camera_y<<std::endl;
-    // std::cout<<"position_z: "<<camera_z<<std::endl;
+    /************暴力滑动滤波器***********************************/
+    if(count < 10){
+      moving_avg_x.push(x_error_connect);
+      moving_avg_y.push(y_error_connect);
+      moving_avg_o.push(orientation_error);
+      count++;
+    }
+    else{
+      moving_avg_x.pop();
+      moving_avg_x.push(x_error_connect);
+      moving_avg_y.pop();
+      moving_avg_y.push(y_error_connect);
+      moving_avg_o.pop();
+      moving_avg_o.push(orientation_error);
+    }
 
-    // std::cout<<"roll: "<<roll<<std::endl;
-    // std::cout<<"pitch: "<<pitch<<std::endl;
-    // std::cout<<"yaw: "<<yaw<<std::endl;
-    // std::cout<<"camera_fi: "<<camera_fi<<std::endl;
-    // std::cout<<"---- "<<std::endl;
+    for(int i = 0; i < moving_avg_x.size(); i++){
+      x_error_connect += moving_avg_x.front();
+      tmp_x.push(moving_avg_x.front());
+      moving_avg_x.pop();
+
+      y_error_connect += moving_avg_y.front();
+      tmp_y.push(moving_avg_y.front());
+      moving_avg_y.pop();
+
+      tmp_y.push(moving_avg_o.front());
+      orientation_error += moving_avg_o.front();
+      moving_avg_o.pop();
+    }
+
+    moving_avg_x = tmp_x;
+    moving_avg_y = tmp_y;
+    moving_avg_o = tmp_o;
+
+    x_error_connect = x_error_connect/moving_avg_x.size();
+    y_error_connect = y_error_connect/moving_avg_y.size();
+    orientation_error = orientation_error/moving_avg_o.size();
+
+    /************暴力滑动滤波器***********************************/
 
     d_y = y_error_connect - y_error_last;
     d_x = x_error_connect - x_error_last;
@@ -338,6 +373,7 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     flag_missed_target = false;
   }
   else{
+    /*丢失目标，所有控制量清零*/
     y_error_connect = 0;
     x_error_connect = 0;
     orientation_error = 0;
@@ -348,6 +384,7 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     d_y = 0;
     d_x = 0;
     d_o = 0;
+    count = 0;
   }
 
   // std::cout << "connect_pwm_x = " << connect_pwm_x << std::endl;

@@ -26,6 +26,8 @@
 
 #include <tf/transform_listener.h>
 
+#include <queue>
+
 class OtterController
 {
 public:
