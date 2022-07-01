@@ -425,20 +425,20 @@ return 1: holding过程中检测到了二维码则立马进入对接状态
 */
 int OtterController::stick_to_point(){
 
-  static double x_integral,y_integral;
+  static double x_error_last, y_error_last, d_hold_x, d_hold_y;
   double radius = 0.8; // holding半径
   //设定点应该自动计算
   x_error_stick = point_now_x - Point_set.pose.position.x;
   y_error_stick = point_now_y - Point_set.pose.position.y;
 
-  // 可以用minimize来算
-  x_integral += x_error_stick;
-  y_integral += y_error_stick;
-  y_integral > 20 ? 20 : y_integral;
-  x_integral > 20 ? 20 : x_integral;
+  d_hold_x = x_error_stick - x_error_last;
+  d_hold_y = y_error_stick - y_error_last;
 
-  stick_to_point_pwm_x = - kp_stick * x_error_stick - ki_stick * x_integral;
-  stick_to_point_pwm_y = - kp_stick * y_error_stick - ki_stick * y_integral;
+  x_error_last = x_error_stick;
+  y_error_last = y_error_stick;
+
+  stick_to_point_pwm_x = minimize(x_error_stick, kp_stick_x, kd_stick_x, d_hold_x);
+  stick_to_point_pwm_y = minimize(y_error_stick, kp_stick_y, kd_stick_y, d_hold_y);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
@@ -528,18 +528,19 @@ void OtterController::voltage_Callback(const std_msgs::Float32& msg){
 double OtterController::calculateSurgeForce(double deltaTime, double u)
 {
   static double integralTerm = 0.0;
+  int is_shutdown;
 
-  if(speed_shutdown_flag) u_d = 2;
-  else u_d = 1;
+  if(speed_shutdown_flag) is_shutdown = 0; //当前速度修改，让船停或者走
+  else is_shutdown = 1;
 
   double u_d_dot = 0.0;
-  double u_tilde = u - u_d;
+  double u_tilde = u_d - u; //期望速度是1或者0
 
   integralTerm += u_tilde * deltaTime;
   integralTerm > 10? 10 : integralTerm;
   //  先纯P控制
   // return mass_u * (u_d_dot - Kp_u * u_tilde - Ki_u * integralTerm) + damp_u * u; //pid控制速度
-  return -(u_d_dot - Kp_u * u_tilde - Ki_u * integralTerm);
+  return -is_shutdown*(u_d_dot - Kp_u * u_tilde - Ki_u * integralTerm);
   // return 3000;//开环
 }
 
@@ -663,8 +664,10 @@ void OtterController::get_control_param(){
   ros::param::get("/OtterController/T_D",Kd_psi);
   ros::param::get("/OtterController/V_P",Kp_u);
   ros::param::get("/OtterController/V_I",Ki_u);
-  ros::param::get("/OtterController/Stick_P",kp_stick);
-  ros::param::get("/OtterController/Stick_D",kd_stick);
+  ros::param::get("/OtterController/Stick_P_x",kp_stick_x);
+  ros::param::get("/OtterController/Stick_D_x",kd_stick_x);
+  ros::param::get("/OtterController/Stick_P_y",kp_stick_y);
+  ros::param::get("/OtterController/Stick_D_y",kd_stick_y);
 
 }
 

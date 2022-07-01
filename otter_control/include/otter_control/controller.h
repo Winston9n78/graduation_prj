@@ -89,8 +89,7 @@ private:
   double kp_con_orient = 0;
   double kd_con_orient = 0;
   //点保持参数
-  double kp_stick = 0;
-  double ki_stick = 0;
+  double kp_stick_x = 0, kd_stick_x = 0, kp_stick_y = 0, kd_stick_y = 0;
   double kd_stick = 0;
 
   // Sensor data
@@ -104,7 +103,7 @@ private:
 
   double heading_angle = 0;
 
-  double velocity = 2;
+  double velocity = 0; //假设当前速度，如果期望速度大于0，则会动，反之不动
 
   float record_pos_x_node1 = 0;
   float record_pos_y_node1 = 0;

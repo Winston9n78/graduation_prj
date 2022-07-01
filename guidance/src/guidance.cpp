@@ -75,7 +75,7 @@ Guidance::Guidance()
         if(i != (point_number-4)) i+=2;
         else{
           
-          // u = 1;//停船
+          u = 0;//停船，这个u是期望速度，并且会发布出去，由于当前速度假设是2，因此当这个设置为2时船会停
           // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
         }
 
@@ -89,8 +89,8 @@ Guidance::Guidance()
 
     // 将最终目标点坐标publish
     geometry_msgs::PoseStamped goal_point_;
-    goal_point_.pose.position.x = m_path[i+2];
-    goal_point_.pose.position.y = m_path[i+3];
+    goal_point_.pose.position.x = m_path[point_number - 2];
+    goal_point_.pose.position.y = m_path[point_number - 1];
     goal_point_pub.publish(goal_point_);
 
     followPath(x_0, y_0, heading_angle, m_path[i+0], m_path[i+1], m_path[i+2], m_path[i+3]);

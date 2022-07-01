@@ -39,7 +39,7 @@ namespace otter_coverage
     std::vector<geometry_msgs::PoseStamped>::iterator iterator_path;
 
     double m_path[point_number];
-    double u = 1; //初始值，应该算出来
+    double u = 1; //初始期望值，历程是算出来
 
     ros::Publisher m_controllerPub;
 
