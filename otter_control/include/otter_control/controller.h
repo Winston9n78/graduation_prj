@@ -132,7 +132,7 @@ private:
 
   bool speed_swtich_flag = 1, turnning_switch_flag = 1;
 
-  bool Arrive_master, Arrive_slave;
+  bool Arrive_master = false, Arrive_slave;
 
   double y_error_connect, x_error_connect, orientation_error;
   double d_y = 0,d_x = 0,d_o = 0,d_fi = 0;

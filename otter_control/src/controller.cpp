@@ -94,7 +94,7 @@ OtterController::OtterController() : T(3, 2)
 
     if(is_step1_done == false){
       if(!Arrive_master) tauSurge = calculateSurgeForce(deltaTime, velocity);
-      else tauSurge = 0;
+      else tauSurge = 0; //不仅u_d = 0(期望速度)，这里也为0
       tauYaw = calculateYawMoment(deltaTime, heading_angle, 0); //根据控制周期，航向角控制
       is_step1_done = stick_to_point(); /* 对点锁定 */
     }
@@ -115,8 +115,8 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge + tauYaw  - connect_pwm_orientation + connect_pwm_x + stick_flag * stick_to_point_pwm_y;
-    double right_output = output_dead - tauSurge + tauYaw - connect_pwm_orientation - connect_pwm_x + stick_flag * stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge + tauYaw  - connect_pwm_orientation + connect_pwm_x + stick_to_point_pwm_y;
+    double right_output = output_dead - tauSurge + tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_y;
 
     double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
     double tail_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
@@ -281,7 +281,7 @@ int OtterController::latching_algorithm(){
     connect_pwm_y = 0;
   }
 
-  if(0) return 1;
+  if(done_flag) return 1;
   else return 0;
   // 由锁的状态返回对接成功状态
   /*
@@ -426,7 +426,8 @@ return 1: holding过程中检测到了二维码则立马进入对接状态
 int OtterController::stick_to_point(){
 
   static double x_error_last, y_error_last, d_hold_x, d_hold_y;
-  double radius = 0.8; // holding半径
+  static bool latch_flag;
+  double radius = 0.5; // holding半径
   //设定点应该自动计算
   x_error_stick = point_now_x - Point_set.pose.position.x;
   y_error_stick = point_now_y - Point_set.pose.position.y;
@@ -443,16 +444,22 @@ int OtterController::stick_to_point(){
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
   if(dist < radius) Arrive_master = true;
+  if(!Arrive_master){
+    stick_to_point_pwm_x = 0;
+    stick_to_point_pwm_y = 0;    
+  }
 
   if(Arrive_master && dist < radius){
     stick_to_point_pwm_x = 0;
     stick_to_point_pwm_y = 0;
   }
-  else if(Arrive_master && dist > radius){ //离开目标点一定范围，开始通过x与y坐标偏差控制。航向角是一直开着的。
-   
-  }
 
-  if(Arrive_master && !flag_missed_target) {stick_flag = 0;return 1;}
+  if(Arrive_master && !flag_missed_target || latch_flag) { //就不再进行holding了
+    stick_to_point_pwm_x = 0;
+    stick_to_point_pwm_y = 0;     
+    latch_flag = true;
+    return 1;
+  }
   else return 0;
 
 }
@@ -603,7 +610,7 @@ Eigen::Vector2d OtterController::thrustAllocation(Eigen::Vector3d tau_d)
 
 void OtterController::inputCallback(const usv_msgs::SpeedCourse& msg)
 {
-  u_d = msg.speed;
+  u_d = msg.speed; //到目的地是就会变为0
   psi_d = msg.course;
   
   // ROS_INFO_STREAM("Psi_d: " << psi_d);
