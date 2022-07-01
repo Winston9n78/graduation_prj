@@ -212,7 +212,7 @@ int OtterController::latching_algorithm(){
   connect_pwm_y = minimize(y_error_connect, kp_con_y, kd_con_y, d_y);
   connect_pwm_orientation = minimize(orientation_error, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
-/***********************************************************************************/
+/**********************************MIT的控制思路*************************************************/
     // if(prepared_flag){
     //   // std::cout << "准备就绪" << std::endl;
     //   // 对接测试的时候这个条件应该是对接点在往前一点的距离，肯定不是刚刚好那个点作为条件
@@ -240,7 +240,7 @@ int OtterController::latching_algorithm(){
     // }
     connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
 
-/*******************************对准测试用****************************************************/
+/*****************************本船对接******************************************************/
     // if(!done_flag){
     //   if(!back_flag){
     //     connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);
@@ -265,14 +265,13 @@ int OtterController::latching_algorithm(){
     //     }
     //   }
     // }
-
     // else{
     //   connect_pwm_y = 0;
     //   connect_pwm_orientation = 0;
     //   connect_pwm_x = 0;
     // }
 
-/*******************************对接*************************************************/
+/*******************************************************************************/
 
   }
   else{
@@ -321,42 +320,42 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     orientation_error = camera_fi - camera_pitch; // 旋转角偏差
 
     /************暴力滑动滤波器***********************************/
-    if(count < 10){
-      moving_avg_x.push(x_error_connect);
-      moving_avg_y.push(y_error_connect);
-      moving_avg_o.push(orientation_error);
-      count++;
-    }
-    else{
-      moving_avg_x.pop();
-      moving_avg_x.push(x_error_connect);
-      moving_avg_y.pop();
-      moving_avg_y.push(y_error_connect);
-      moving_avg_o.pop();
-      moving_avg_o.push(orientation_error);
-    }
+    // if(count < 10){
+    //   moving_avg_x.push(x_error_connect);
+    //   moving_avg_y.push(y_error_connect);
+    //   moving_avg_o.push(orientation_error);
+    //   count++;
+    // }
+    // else{
+    //   moving_avg_x.pop();
+    //   moving_avg_x.push(x_error_connect);
+    //   moving_avg_y.pop();
+    //   moving_avg_y.push(y_error_connect);
+    //   moving_avg_o.pop();
+    //   moving_avg_o.push(orientation_error);
+    // }
 
-    for(int i = 0; i < moving_avg_x.size(); i++){
-      x_error_connect += moving_avg_x.front();
-      tmp_x.push(moving_avg_x.front());
-      moving_avg_x.pop();
+    // for(int i = 0; i < moving_avg_x.size(); i++){
+    //   x_error_connect += moving_avg_x.front();
+    //   tmp_x.push(moving_avg_x.front());
+    //   moving_avg_x.pop();
 
-      y_error_connect += moving_avg_y.front();
-      tmp_y.push(moving_avg_y.front());
-      moving_avg_y.pop();
+    //   y_error_connect += moving_avg_y.front();
+    //   tmp_y.push(moving_avg_y.front());
+    //   moving_avg_y.pop();
 
-      tmp_y.push(moving_avg_o.front());
-      orientation_error += moving_avg_o.front();
-      moving_avg_o.pop();
-    }
+    //   tmp_y.push(moving_avg_o.front());
+    //   orientation_error += moving_avg_o.front();
+    //   moving_avg_o.pop();
+    // }
 
-    moving_avg_x = tmp_x;
-    moving_avg_y = tmp_y;
-    moving_avg_o = tmp_o;
+    // moving_avg_x = tmp_x;
+    // moving_avg_y = tmp_y;
+    // moving_avg_o = tmp_o;
 
-    x_error_connect = x_error_connect/moving_avg_x.size();
-    y_error_connect = y_error_connect/moving_avg_y.size();
-    orientation_error = orientation_error/moving_avg_o.size();
+    // x_error_connect = x_error_connect/moving_avg_x.size();
+    // y_error_connect = y_error_connect/moving_avg_y.size();
+    // orientation_error = orientation_error/moving_avg_o.size();
 
     /************暴力滑动滤波器***********************************/
 
