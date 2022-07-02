@@ -32,20 +32,29 @@ int main(int argc, char** argv){
     control_cmd.data.push_back(0);
 
     latch_signal.publish(control_cmd);
-
+    // ros::Duration(5).sleep(); // 0.5ms脉冲
 
     double frequency = 100.0;
     double deltaTime = 1.0 / frequency;
     ros::Rate rate(frequency);
     while (nh.ok()) {
-        if(is_ok && !done){ // 勾住
+        if(is_ok && !done){ // 勾住 is_ok && !done
             control_cmd.data[a_up] = 1;/*勾住流程电平还不确定的，这里暂时示范*/
             latch_signal.publish(control_cmd);
-            /*延时操作,延时前的状态也需要发布*/
-            ros::Duration(3).sleep(); /*延迟3秒再。。。*/
+            ros::Duration(1).sleep(); // 0.5ms脉冲
+            control_cmd.data[a_up] = 0;
+            latch_signal.publish(control_cmd);/*延时操作,延时前的状态也需要发布*/
+            std::cout << "出钩" << std::endl;
+            ros::Duration(5).sleep(); /*10s等待动作完成*/
+            
             control_cmd.data[a_down] = 1;
             latch_signal.publish(control_cmd);
-            ros::Duration(3).sleep();/*延迟3秒表示完全勾住再完成*/
+            ros::Duration(1).sleep(); // 0.5ms脉冲
+            control_cmd.data[a_down] = 0;
+            latch_signal.publish(control_cmd);
+            std::cout << "收钩" << std::endl;
+            ros::Duration(5).sleep();/*10s等待动作完成*/
+            
             done = true; /*勾住动作完成*/
         }
         else if(!is_ok && done){ // 勾住失败而打开

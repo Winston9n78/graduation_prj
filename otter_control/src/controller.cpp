@@ -115,10 +115,10 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge + tauYaw  - connect_pwm_orientation + connect_pwm_x + stick_to_point_pwm_y;
-    double right_output = output_dead - tauSurge + tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x + stick_to_point_pwm_y;
+    double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x - stick_to_point_pwm_y;
 
-    double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
+    double head_output = output_dead - connect_pwm_y - stick_to_point_pwm_x;
     double tail_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
@@ -257,7 +257,7 @@ int OtterController::latching_algorithm(){
     //       done_flag = 1;/*退出对接程序*/
     //     }
     //     /*对接失败*/
-    //     else if((x_error_connect - 1.5) < 0.05 && (x_error_connect - 1.5) > -0.05){ 
+    //     else if((x_error_connect - 1.5) < 0.08 && (x_error_connect - 1.5) > -0.08){ 
     //       back_flag = 0; /*后退标志位置0*/
     //       is_ok = 0; /*锁打开*/
     //       start = 0; /*关闭计时*/

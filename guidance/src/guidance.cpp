@@ -33,13 +33,13 @@ Guidance::Guidance()
       nh.subscribe("path_set", 100, &Guidance::path_callback, this);      
   //发布速度
   m_controllerPub =
-      nh.advertise<usv_msgs::SpeedCourse>("speed_heading", 1000);
+      nh.advertise<usv_msgs::SpeedCourse>("speed_heading", 10);
 
   goal_point_pub =
-      nh.advertise<geometry_msgs::PoseStamped>("goal_point", 1000);
+      nh.advertise<geometry_msgs::PoseStamped>("goal_point", 10);
 
   usv_pose_pub = 
-      nh.advertise<guidance::usv_pose>("usv/pose",1000); 
+      nh.advertise<guidance::usv_pose>("usv/pose",10); 
 
   //订阅角度
   ros::Subscriber sub =
@@ -56,7 +56,10 @@ Guidance::Guidance()
     ros::param::get("/OtterController/path_point", str);
     // std::cout << str << std::endl;
     GetFloat(str, m_path);//路径点数变多时对应修改point_num, 在stof中
-    // std::cout << m_path[0] << std::endl;
+    std::cout << m_path[0] << std::endl;
+    std::cout << m_path[1] << std::endl;
+    std::cout << m_path[2] << std::endl;
+    std::cout << m_path[3] << std::endl;
     /*
     在这里订阅UBW进行计算，替换上面三个角度
     */
@@ -70,11 +73,10 @@ Guidance::Guidance()
     // }
     if(1){
 
-      if(dist(x_0, y_0, m_path[i+2], m_path[i+3]) < 0.8){
+      if(dist(x_0, y_0, m_path[i+2], m_path[i+3]) < 0.5){
 
         if(i != (point_number-4)) i+=2;
         else{
-          
           u = 0;//停船，这个u是期望速度，并且会发布出去，由于当前速度假设是2，因此当这个设置为2时船会停
           // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
         }

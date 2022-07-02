@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string.h>
 
-#define point_number 2*5  //路径点数变多时对应修改
+#define point_number 2 * 2  //5路径点数变多时对应修改
 
 using namespace std;
 
