@@ -422,6 +422,7 @@ int OtterController::stick_to_point(){
 
   static double x_error_last, y_error_last, d_hold_x, d_hold_y;
   static bool latch_flag;
+  static double angle_hold;
   double radius = 0.5; // holding半径
   //设定点应该自动计算
   x_error_stick = point_now_x - Point_set.pose.position.x;
@@ -432,33 +433,42 @@ int OtterController::stick_to_point(){
 
   x_error_last = x_error_stick;
   y_error_last = y_error_stick;
-
-  stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
-  stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);//minimize(y_error_stick, kp_stick_y, kd_stick_y, d_hold_y);
+  
+  stick_to_point_pwm_x = kp_stick_x * linear_acc_x;
+  stick_to_point_pwm_y = kp_stick_y * linear_acc_y;
+  stick_to_point_pwm_o =  - (kp_stick_o * (angle_z - angle_hold) + kd_stick_o * angular_velocity_z);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
+
   // std::cout << dist << std::endl;
-  std::cout << Arrive_master << std::endl;
-  
-  std::cout << stick_to_point_pwm_x << std::endl;
+  // std::cout << Arrive_master << std::endl;
+  // std::cout << stick_to_point_pwm_x << std::endl;
   // std::cout << x_error_stick << std::endl;
   // std::cout << kp_stick_x << std::endl;
   // std::cout << kp_stick_x * x_error_stick + kd_stick_x * d_hold_x << std::endl;
   // std::cout << stick_to_point_pwm_x << std::endl;
-  if(dist < radius) Arrive_master = true;
+
+  // 退回终点的时候用,主动船用
+  // if(Arrive_master && flag_missed_target){
+  //   stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
+  //   stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
+  //   latch_flag = false;
+  // }
+
+  if(dist < radius && !Arrive_master){
+    Arrive_master = true;
+    angle_hold = angle_z;
+  }
   if(!Arrive_master){
     stick_to_point_pwm_x = 0;
-    stick_to_point_pwm_y = 0;    
-  }
-
-  if(Arrive_master && dist < radius){
-    // stick_to_point_pwm_x = 0;
-    // stick_to_point_pwm_y = 0;
+    stick_to_point_pwm_y = 0; 
+    stick_to_point_pwm_o = 0;
   }
 
   if(Arrive_master && !flag_missed_target || latch_flag) { //就不再进行holding了
     stick_to_point_pwm_x = 0;
-    stick_to_point_pwm_y = 0;     
+    stick_to_point_pwm_y = 0;
+    stick_to_point_pwm_o = 0;     
     latch_flag = true;
     return 1;
   }
@@ -510,7 +520,7 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &
   heading_.data = static_cast<float>(heading_angle);
   heading_angle_pub.publish((std_msgs::Float32)heading_);
   
-  float straight_line = pow((tag0_y-record_pos_y_node1),2) + pow((tag0_x-record_pos_x_node1),2);
+  float straight_line = pow((tag0_y - record_pos_y_node1),2) + pow((tag0_x-record_pos_x_node1),2);
   //sqrt(straight_line)/0.1;
 
   record_pos_x_node1 = tag0_x;
@@ -524,6 +534,8 @@ void OtterController::imu_Callback(const sensor_msgs::Imu& msg){
   angular_velocity_y = msg.angular_velocity.y;
   angular_velocity_z = msg.angular_velocity.z;
   angle_z = msg.orientation.z;
+  linear_acc_x = msg.linear_acceleration.x;
+  linear_acc_y = msg.linear_acceleration.y;
   // std::cout <<angular_velocity_z <<std::endl;
 
 }
@@ -568,7 +580,7 @@ double OtterController::calculateYawMoment(double deltaTime, double psi_slam, do
 
   double r_d_dot = 0.0;
   double r_tilde = 0.0; // r - r_d;
-  double psi_tilde = psi_slam - 0;//psi_d;
+  double psi_tilde = psi_slam - psi_d;//psi_d;
   if (psi_tilde > 180) {
     psi_tilde -= 2 * 180;
   } else if (psi_tilde < -180) {

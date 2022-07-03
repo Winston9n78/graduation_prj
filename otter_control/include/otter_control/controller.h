@@ -89,7 +89,7 @@ private:
   double kp_con_orient = 0;
   double kd_con_orient = 0;
   //点保持参数
-  double kp_stick_x = 0, kd_stick_x = 0, kp_stick_y = 0, kd_stick_y = 0;
+  double kp_stick_x = 0, kd_stick_x = 0, kp_stick_y = 0, kd_stick_y = 0, kp_stick_o = 0, kd_stick_o = 0;
   double kd_stick = 0;
 
   // Sensor data
@@ -114,6 +114,9 @@ private:
   float angle_x = 0;
   float angle_y = 0;
   float angle_z = 0;
+  float linear_acc_x = 0;
+  float linear_acc_y = 0;
+  float linear_acc_z = 0;
 
   float output_max = 1700;
   float output_min = 1300;
@@ -125,7 +128,7 @@ private:
 
   double point_now_x, point_now_y, point_now_z;
   double point_set_x = 1.5, point_set_y = 1.5, point_set_z;
-  double stick_to_point_pwm_x = 0, stick_to_point_pwm_y = 0;
+  double stick_to_point_pwm_x = 0, stick_to_point_pwm_y = 0, stick_to_point_pwm_o = 0;
 
   int16_t keyboard_val_speed = 0, keyboard_val_turning = 0, keyboard_start = 1, keyboard_move = 0;
   int16_t keyboard_con_mode = 0, aoto_con_mode = -1;
