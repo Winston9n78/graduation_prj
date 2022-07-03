@@ -193,8 +193,8 @@ void Guidance::followPath(double x, double y, double psi, double x_start, double
   // Store closest 存储最近的点到这个massage中
   // geometry_msgs::PoseStamped pose_d = *closest;
 
-  // Erase previous elements 在存储的路径上擦除之前的位置
-  //m_path.poses.erase(m_path.poses.begin(), closest);
+  //  Erase previous elements 在存储的路径上擦除之前的位置
+  //  m_path.poses.erase(m_path.poses.begin(), closest);
 
   // Path tangential angle 路径切角
   double gamma_p = atan2(y_goal - y_start, x_goal - x_start); 

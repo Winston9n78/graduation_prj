@@ -111,6 +111,9 @@ private:
   float angular_velocity_x = 0;
   float angular_velocity_y = 0;
   float angular_velocity_z = 0;
+  float angle_x = 0;
+  float angle_y = 0;
+  float angle_z = 0;
 
   float output_max = 1700;
   float output_min = 1300;

@@ -71,7 +71,7 @@ OtterController::OtterController() : T(3, 2)
     get_control_param();
     
     try{
-        //得到坐标odom和坐标base_link之间的关系
+      // 得到坐标odom和坐标base_link之间的关系
       // listener.waitForTransform("my_bundle", "camera", ros::Time(0), ros::Duration(3.0));
       listener.lookupTransform("my_bundle", "camera",
                                ros::Time(0), transform);
@@ -82,14 +82,26 @@ OtterController::OtterController() : T(3, 2)
     }
 
     /*
-     对接程序框架(当被动船确定没有识别二维码时框架可直接用在被动船)：
-     holding position
-     ->看到apriltag->
-     latching
-     ->锁住则成功，其他则为失败,自动循环对接，直到成功->
-     if failed:holding position until arrive
-     else:next operation
+      对接程序框架(当被动船确定没有识别二维码时框架可直接用在被动船)：
+      holding position
+      ->看到apriltag->
+      latching
+      ->锁住则成功，其他则为失败,自动循环对接，直到成功->
+      if failed:holding position until arrive
+      else:next operation
     */
+
+    // if(1)
+    //   tauYaw = calculateYawMoment(deltaTime, heading_angle, 0);
+    // else
+    //   tauYaw = 0;
+
+    //  tauYaw = - (Kp_psi * (angle_z - 70) + Kd_psi * angular_velocity_z);
+
+    //  std::cout << "角度输出：" << tauYaw << std::endl;
+
+    //  stick_to_point();
+
 #if 0 /*对接测试*/
 
     if(is_step1_done == false){
@@ -131,7 +143,7 @@ OtterController::OtterController() : T(3, 2)
     // status.force_left = left_output;
     // status.force_right = right_output;
     // status.force_tail = tail_output;
-    status.orientation_pitch = pitch;
+    status.orientation_pitch = orientation_error;//pitch
     status.orientation_roll = roll;
     status.orientation_yaw = yaw;
     status.position_x = camera_y;
@@ -210,7 +222,7 @@ int OtterController::latching_algorithm(){
   static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
 
   connect_pwm_y = minimize(y_error_connect, kp_con_y, kd_con_y, d_y);
-  connect_pwm_orientation = minimize(orientation_error, kp_con_orient, kd_con_orient, d_o);
+  connect_pwm_orientation = minimize(orientation_error + 0.5, kp_con_orient, kd_con_orient, d_o);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 /**********************************MIT的控制思路*************************************************/
     // if(prepared_flag){
@@ -238,13 +250,15 @@ int OtterController::latching_algorithm(){
     //     prepared_flag = 1;
     //   }
     // }
-    connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);//测试
+    if(y_error_connect < 0.1 && y_error_connect > -0.1 && orientation_error < -5 && orientation_error > -5)
+      connect_pwm_x = minimize(x_error_connect - 1.32, kp_con_x, kd_con_x, d_x);//测试
+    else connect_pwm_x = 0;
 
 /*****************************本船对接******************************************************/
     // if(!done_flag){
     //   if(!back_flag){
     //     connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);
-    //     if((x_error_connect - 1.0) < 0.05 && (x_error_connect - 1.0) > -0.05) is_ok = 1;//锁开始闭合
+    //     if((x_error_connect - 1.0) < 0.05 && (x_error_connect - 1.0) > -0.05 && orientation_error < -5 && orientation_error > -5) is_ok = 1;//锁开始闭合
     //   }
     //   if(is_lock_ok){
     //     connect_pwm_x = minimize(x_error_connect - 1.5, kp_con_x, kd_con_x, d_x);
@@ -294,7 +308,9 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
   
   static double x_error_last, y_error_last, o_error_last, camera_fi_last;
 
-  std::queue<double> moving_avg_x, tmp_x, moving_avg_y, tmp_y, moving_avg_o, tmp_o;
+  const int filter_size = 10;
+  int sum_x = 0, sum_y = 0, sum_o = 0;
+  static double move_avg_filter_x[filter_size],move_avg_filter_y[filter_size],move_avg_filter_o[filter_size];
   
   static int count = 0;
 
@@ -319,45 +335,25 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     camera_fi = atan2(y_error_connect, x_error_connect) / 3.14159 * 180;
     orientation_error = camera_fi - camera_pitch; // 旋转角偏差
 
-    /************暴力滑动滤波器***********************************/
-    // if(count < 10){
-    //   moving_avg_x.push(x_error_connect);
-    //   moving_avg_y.push(y_error_connect);
-    //   moving_avg_o.push(orientation_error);
-    //   count++;
-    // }
-    // else{
-    //   moving_avg_x.pop();
-    //   moving_avg_x.push(x_error_connect);
-    //   moving_avg_y.pop();
-    //   moving_avg_y.push(y_error_connect);
-    //   moving_avg_o.pop();
-    //   moving_avg_o.push(orientation_error);
-    // }
+    for(int i = filter_size - 1; i > 1; i--){
+      move_avg_filter_x[i] = move_avg_filter_x[i-1];
+      move_avg_filter_y[i] = move_avg_filter_y[i-1];
+      move_avg_filter_o[i] = move_avg_filter_o[i-1];
+    }
 
-    // for(int i = 0; i < moving_avg_x.size(); i++){
-    //   x_error_connect += moving_avg_x.front();
-    //   tmp_x.push(moving_avg_x.front());
-    //   moving_avg_x.pop();
+    move_avg_filter_x[0] = x_error_connect;
+    move_avg_filter_y[0] = y_error_connect;
+    move_avg_filter_o[0] = orientation_error;
 
-    //   y_error_connect += moving_avg_y.front();
-    //   tmp_y.push(moving_avg_y.front());
-    //   moving_avg_y.pop();
+    for(int i = 0; i < filter_size;  i++){
+      sum_x += move_avg_filter_x[i];
+      sum_y += move_avg_filter_y[i];
+      sum_o += move_avg_filter_o[i];
+    }
 
-    //   tmp_y.push(moving_avg_o.front());
-    //   orientation_error += moving_avg_o.front();
-    //   moving_avg_o.pop();
-    // }
-
-    // moving_avg_x = tmp_x;
-    // moving_avg_y = tmp_y;
-    // moving_avg_o = tmp_o;
-
-    // x_error_connect = x_error_connect/moving_avg_x.size();
-    // y_error_connect = y_error_connect/moving_avg_y.size();
-    // orientation_error = orientation_error/moving_avg_o.size();
-
-    /************暴力滑动滤波器***********************************/
+    x_error_connect = sum_x/filter_size;
+    y_error_connect = sum_y/filter_size;
+    orientation_error = sum_o/filter_size;
 
     d_y = y_error_connect - y_error_last;
     d_x = x_error_connect - x_error_last;
@@ -437,11 +433,18 @@ int OtterController::stick_to_point(){
   x_error_last = x_error_stick;
   y_error_last = y_error_stick;
 
-  stick_to_point_pwm_x = minimize(x_error_stick, kp_stick_x, kd_stick_x, d_hold_x);
-  stick_to_point_pwm_y = minimize(y_error_stick, kp_stick_y, kd_stick_y, d_hold_y);
+  stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
+  stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);//minimize(y_error_stick, kp_stick_y, kd_stick_y, d_hold_y);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
-
+  // std::cout << dist << std::endl;
+  std::cout << Arrive_master << std::endl;
+  
+  std::cout << stick_to_point_pwm_x << std::endl;
+  // std::cout << x_error_stick << std::endl;
+  // std::cout << kp_stick_x << std::endl;
+  // std::cout << kp_stick_x * x_error_stick + kd_stick_x * d_hold_x << std::endl;
+  // std::cout << stick_to_point_pwm_x << std::endl;
   if(dist < radius) Arrive_master = true;
   if(!Arrive_master){
     stick_to_point_pwm_x = 0;
@@ -449,8 +452,8 @@ int OtterController::stick_to_point(){
   }
 
   if(Arrive_master && dist < radius){
-    stick_to_point_pwm_x = 0;
-    stick_to_point_pwm_y = 0;
+    // stick_to_point_pwm_x = 0;
+    // stick_to_point_pwm_y = 0;
   }
 
   if(Arrive_master && !flag_missed_target || latch_flag) { //就不再进行holding了
@@ -520,6 +523,7 @@ void OtterController::imu_Callback(const sensor_msgs::Imu& msg){
   angular_velocity_x = msg.angular_velocity.x;
   angular_velocity_y = msg.angular_velocity.y;
   angular_velocity_z = msg.angular_velocity.z;
+  angle_z = msg.orientation.z;
   // std::cout <<angular_velocity_z <<std::endl;
 
 }
@@ -560,29 +564,31 @@ double OtterController::calculateYawMoment(double deltaTime, double psi_slam, do
   double D;
 
   double output;
+  static double error_last;
 
   double r_d_dot = 0.0;
   double r_tilde = 0.0; // r - r_d;
-  double psi_tilde = psi_slam - psi_d;
+  double psi_tilde = psi_slam - 0;//psi_d;
   if (psi_tilde > 180) {
     psi_tilde -= 2 * 180;
   } else if (psi_tilde < -180) {
     psi_tilde += 2 * 180;
   }
 
+  
   //if偏差大于一定值速度设置为0
   if(psi_tilde > 60) speed_shutdown_flag = true;
   else speed_shutdown_flag = false;
   
-  D = angular_velocity_z;
-  
+  D = psi_tilde - error_last;
+  error_last = psi_tilde;
   // TODO: anti windup
   integralTerm += psi_tilde * deltaTime;
   integralTerm > 10 ? 10:integralTerm;
   
   output =  Kp_psi * psi_tilde + Ki_psi * integralTerm + Kd_psi * D;
-  output > 200 ? 200 : output;
-  output < -200 ? -200 : output;
+  // output > 200 ? 200 : output;
+  // output < -200 ? -200 : output;
   // return mass_psi * (r_d_dot - Kd_psi * r_tilde - Kp_psi * psi_tilde - Ki_psi * integralTerm) - damp_psi * r;
   return output;
 }
