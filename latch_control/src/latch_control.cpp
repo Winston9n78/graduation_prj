@@ -38,7 +38,7 @@ int main(int argc, char** argv){
     double deltaTime = 1.0 / frequency;
     ros::Rate rate(frequency);
     while (nh.ok()) {
-        if(is_ok && !done){ // 勾住 is_ok && !done
+        if(1){ // 勾住 is_ok && !done
             control_cmd.data[a_up] = 1;/*勾住流程电平还不确定的，这里暂时示范*/
             latch_signal.publish(control_cmd);
             ros::Duration(1).sleep(); // 0.5ms脉冲

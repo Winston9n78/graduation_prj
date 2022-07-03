@@ -127,11 +127,11 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x + stick_to_point_pwm_y;
-    double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x - stick_to_point_pwm_y;
+    double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
+    double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_x - stick_to_point_pwm_o;
 
-    double head_output = output_dead - connect_pwm_y - stick_to_point_pwm_x;
-    double tail_output = output_dead + connect_pwm_y + stick_to_point_pwm_x;
+    double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_y;
+    double tail_output = output_dead + connect_pwm_y - stick_to_point_pwm_y;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
@@ -196,9 +196,9 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "dx: " << kd_con_x*d_x << std::endl;
-    std::cout << "dy: " << kd_con_y*d_y << std::endl;
-    std::cout << "do: " << kd_con_orient*d_o << std::endl;
+    std::cout << "dx: " << x_error_connect << std::endl;
+    std::cout << "dy: " << y_error_connect << std::endl;
+    std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
     ros::spinOnce();
@@ -222,7 +222,7 @@ int OtterController::latching_algorithm(){
   static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
 
   connect_pwm_y = minimize(y_error_connect, kp_con_y, kd_con_y, d_y);
-  connect_pwm_orientation = minimize(orientation_error + 0.5, kp_con_orient, kd_con_orient, d_o);
+  connect_pwm_orientation = minimize(orientation_error + 0.5, kp_con_orient, kd_con_orient, angular_velocity_z);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 /**********************************MIT的控制思路*************************************************/
     // if(prepared_flag){
@@ -250,9 +250,10 @@ int OtterController::latching_algorithm(){
     //     prepared_flag = 1;
     //   }
     // }
-    if(y_error_connect < 0.1 && y_error_connect > -0.1 && orientation_error < -5 && orientation_error > -5)
+    if(y_error_connect < 0.1 && y_error_connect > -0.1 && orientation_error < 5 && orientation_error > -5)
       connect_pwm_x = minimize(x_error_connect - 1.32, kp_con_x, kd_con_x, d_x);//测试
-    else connect_pwm_x = 0;
+    else //扰动时退回来一点点
+      connect_pwm_x = 0;//minimize(x_error_connect - 1.32 - 0.15, kp_con_x, kd_con_x, d_x);
 
 /*****************************本船对接******************************************************/
     // if(!done_flag){
@@ -309,8 +310,8 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
   static double x_error_last, y_error_last, o_error_last, camera_fi_last;
 
   const int filter_size = 10;
-  int sum_x = 0, sum_y = 0, sum_o = 0;
-  static double move_avg_filter_x[filter_size],move_avg_filter_y[filter_size],move_avg_filter_o[filter_size];
+  double sum_x = 0, sum_y = 0, sum_o = 0;
+  static double move_avg_filter_x[10],move_avg_filter_y[10],move_avg_filter_o[10];
   
   static int count = 0;
 
@@ -335,7 +336,7 @@ void OtterController::apriltag_Callback(const apriltags2_ros::AprilTagDetectionA
     camera_fi = atan2(y_error_connect, x_error_connect) / 3.14159 * 180;
     orientation_error = camera_fi - camera_pitch; // 旋转角偏差
 
-    for(int i = filter_size - 1; i > 1; i--){
+    for(int i = filter_size - 1; i >= 1; i--){
       move_avg_filter_x[i] = move_avg_filter_x[i-1];
       move_avg_filter_y[i] = move_avg_filter_y[i-1];
       move_avg_filter_o[i] = move_avg_filter_o[i-1];
@@ -423,6 +424,7 @@ int OtterController::stick_to_point(){
   static double x_error_last, y_error_last, d_hold_x, d_hold_y;
   static bool latch_flag;
   static double angle_hold;
+  static int count, done;
   double radius = 0.5; // holding半径
   //设定点应该自动计算
   x_error_stick = point_now_x - Point_set.pose.position.x;
@@ -440,10 +442,10 @@ int OtterController::stick_to_point(){
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
-  // std::cout << dist << std::endl;
-  // std::cout << Arrive_master << std::endl;
-  // std::cout << stick_to_point_pwm_x << std::endl;
-  // std::cout << x_error_stick << std::endl;
+  std::cout << angle_z << std::endl;
+  std::cout << angle_hold << std::endl;
+  std::cout << stick_to_point_pwm_x << std::endl;
+  std::cout << stick_to_point_pwm_y << std::endl;
   // std::cout << kp_stick_x << std::endl;
   // std::cout << kp_stick_x * x_error_stick + kd_stick_x * d_hold_x << std::endl;
   // std::cout << stick_to_point_pwm_x << std::endl;
@@ -454,10 +456,12 @@ int OtterController::stick_to_point(){
   //   stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   //   latch_flag = false;
   // }
-
-  if(dist < radius && !Arrive_master){
+  if(!done) count++;
+  if(!Arrive_master && count > 100){ //dist < radius 
     Arrive_master = true;
     angle_hold = angle_z;
+    done = 1;
+    count = 0;
   }
   if(!Arrive_master){
     stick_to_point_pwm_x = 0;
@@ -692,6 +696,8 @@ void OtterController::get_control_param(){
   ros::param::get("/OtterController/Stick_D_x",kd_stick_x);
   ros::param::get("/OtterController/Stick_P_y",kp_stick_y);
   ros::param::get("/OtterController/Stick_D_y",kd_stick_y);
+  ros::param::get("/OtterController/Stick_P_o",kp_stick_o);
+  ros::param::get("/OtterController/Stick_D_o",kd_stick_o);
 
 }
 
