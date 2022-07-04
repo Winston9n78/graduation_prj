@@ -100,7 +100,7 @@ OtterController::OtterController() : T(3, 2)
 
     //  std::cout << "角度输出：" << tauYaw << std::endl;
 
-    //  stick_to_point();
+     stick_to_point();
 
 #if 0 /*对接测试*/
 
@@ -194,11 +194,11 @@ OtterController::OtterController() : T(3, 2)
 
     // ROS_INFO_STREAM("head_output: " << head_output); 
     std::cout << "head_output: " << head_output << std::endl;
-    // ROS_INFO_STREAM("tail_output: " << tail_output);
+    // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "dx: " << x_error_connect << std::endl;
-    std::cout << "dy: " << y_error_connect << std::endl;
-    std::cout << "do: " << orientation_error << std::endl;
+    std::cout << "x: " <<  std::fixed << std::setprecision(2) << point_now_x << std::endl;
+    std::cout << "y: " <<  std::fixed << std::setprecision(2) << point_now_y << std::endl;
+    //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
     ros::spinOnce();
@@ -427,8 +427,8 @@ int OtterController::stick_to_point(){
   static int count, done;
   double radius = 0.5; // holding半径
   //设定点应该自动计算
-  x_error_stick = point_now_x - Point_set.pose.position.x;
-  y_error_stick = point_now_y - Point_set.pose.position.y;
+  x_error_stick = point_now_x - (-4.0);//Point_set.pose.position.x;
+  y_error_stick = point_now_y - (0.52);//Point_set.pose.position.y;
 
   d_hold_x = x_error_stick - x_error_last;
   d_hold_y = y_error_stick - y_error_last;
@@ -436,16 +436,16 @@ int OtterController::stick_to_point(){
   x_error_last = x_error_stick;
   y_error_last = y_error_stick;
   
-  stick_to_point_pwm_x = kp_stick_x * linear_acc_x;
-  stick_to_point_pwm_y = kp_stick_y * linear_acc_y;
+  stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
+  stick_to_point_pwm_y = -(kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   stick_to_point_pwm_o =  - (kp_stick_o * (angle_z - angle_hold) + kd_stick_o * angular_velocity_z);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
   std::cout << angle_z << std::endl;
   std::cout << angle_hold << std::endl;
-  std::cout << stick_to_point_pwm_x << std::endl;
-  std::cout << stick_to_point_pwm_y << std::endl;
+  std::cout << x_error_stick << std::endl;
+  std::cout << y_error_stick << std::endl;
   // std::cout << kp_stick_x << std::endl;
   // std::cout << kp_stick_x * x_error_stick + kd_stick_x * d_hold_x << std::endl;
   // std::cout << stick_to_point_pwm_x << std::endl;
@@ -500,6 +500,12 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &
   static double sum, sum_v;
   static double tag0_x,tag0_y,tag0_z,tag1_x,tag1_y,tag1_z;
 
+  static int count, done;
+  const int filter_size = 10;
+  double sum_x0 = 0, sum_y0 = 0, sum_x1 = 0,sum_y1 = 0;
+  static double move_avg_filter_x0[10],move_avg_filter_y0[10],move_avg_filter_x1[10],move_avg_filter_y1[10];
+  static double tag0_x_last,tag0_y_last,tag1_x_last,tag1_y_last;
+
   if(msg.id == 0){
     tag0_y = msg.pos_3d[1];
     tag0_x = msg.pos_3d[0];
@@ -510,13 +516,51 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &
     tag1_x = msg.pos_3d[0];
     tag1_z = msg.pos_3d[2];
   }
+  if(count > 50){
+    // tag0_x = abnomal_detect(tag0_x, tag0_x_last);
+    // tag0_y = abnomal_detect(tag0_y, tag0_y_last);
+    // tag1_x = abnomal_detect(tag1_x, tag1_x_last);
+    // tag1_y = abnomal_detect(tag1_y, tag1_y_last);
+    done = 1;
+  }
+  if(!done) count++;
+
+  for(int i = filter_size - 1; i >= 1; i--){
+    move_avg_filter_x0[i] = move_avg_filter_x0[i-1];
+    move_avg_filter_y0[i] = move_avg_filter_y0[i-1];
+    move_avg_filter_x1[i] = move_avg_filter_x1[i-1];
+    move_avg_filter_y1[i] = move_avg_filter_y1[i-1];
+  }
+
+  move_avg_filter_x0[0] = tag0_x;
+  move_avg_filter_y0[0] = tag0_y;
+  move_avg_filter_x1[0] = tag1_x;
+  move_avg_filter_y1[0] = tag1_y;
+
+  for(int i = 0; i < filter_size;  i++){
+    sum_x0 += move_avg_filter_x0[i];
+    sum_y0 += move_avg_filter_y0[i];
+    sum_x1 += move_avg_filter_x1[i];
+    sum_y1 += move_avg_filter_y1[i];
+  }
+
+  tag0_x = sum_x0/filter_size;
+  tag0_y = sum_y0/filter_size;
+  tag1_x = sum_x1/filter_size;  
+  tag1_y = sum_y1/filter_size;
   // 0在前面
   double delta_y = tag0_y - tag1_y;
   double delta_x = tag0_x - tag1_x;
 
-  point_now_x = tag0_x;
-  point_now_y = tag0_y;
+  point_now_x = (tag0_x + tag1_x) / 2;
+  point_now_y = (tag0_y + tag1_y) / 2;
+
   point_now_z = tag0_z;
+
+  tag0_x_last = tag0_x;
+  tag0_y_last = tag0_y;
+  tag1_x_last = tag1_x;
+  tag1_y_last = tag1_y;
 
   heading_angle =  (90 - (atan2(delta_y, delta_x) / 3.14) * 180);
   
@@ -544,11 +588,13 @@ void OtterController::imu_Callback(const sensor_msgs::Imu& msg){
 
 }
 
-void OtterController::voltage_Callback(const std_msgs::Float32& msg){
+double OtterController::abnomal_detect(double now, double last){
+  return (now - last) > 0.10 ? last : now; 
+}
 
+void OtterController::voltage_Callback(const std_msgs::Float32& msg){
   voltage = msg.data;
   // std::cout <<angular_velocity_z <<std::endl;
-
 }
 
 double OtterController::calculateSurgeForce(double deltaTime, double u)

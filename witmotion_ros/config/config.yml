@@ -55,7 +55,7 @@ witmotion_imu:
         enabled: false
         topic_name: /orientation
     gps_publisher:
-        enabled: false
+        enabled: true
         navsat_fix_frame_id: world
         navsat_fix_topic_name: /gps
         navsat_altitude_topic_name: /gps_altitude

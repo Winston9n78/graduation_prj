@@ -62,6 +62,8 @@ private:
 
   void get_control_param();
 
+  double abnomal_detect(double now, double last);
+
   void cb(parameter_server::drConfig& config, uint32_t level);
   double minimize(double error, double kp, double ki, double integral);
   
