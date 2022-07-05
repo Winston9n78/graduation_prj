@@ -169,6 +169,8 @@ private:
   ros::Publisher usv_status_pub;
   ros::Publisher heading_angle_pub;
   ros::Publisher ok_to_latch;
+  ros::Publisher uwb_gps_pub;
+  
 };
 
 #endif

@@ -22,6 +22,8 @@
 
 #include <queue>
 
+#include <nav_msgs/Odometry.h>
+
 OtterController::OtterController() : T(3, 2)
 {
   ros::NodeHandle nh;
@@ -35,6 +37,9 @@ OtterController::OtterController() : T(3, 2)
   ok_to_latch = nh.advertise<std_msgs::Bool>("is_ok", 10);
 
   usv_status_pub = nh.advertise<otter_control::usv_status>("usv_status",1);
+
+  uwb_gps_pub = nh.advertise<nav_msgs::Odometry>("gps", 100);
+
   heading_angle_pub = nh.advertise<std_msgs::Float32>("heading_angle",1);
   ros::Subscriber sub = nh.subscribe("speed_heading", 1000, &OtterController::inputCallback, this); //获得速度和期望航向角
   ros::Subscriber sub_imu = nh.subscribe("imu", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
@@ -169,35 +174,35 @@ OtterController::OtterController() : T(3, 2)
     ok_to_latch.publish(is_ok_);
 
 
-    // 方便调试直接在这里输出信息了
-    // ROS_INFO_STREAM("batterty_voltage: " << voltage);
-    std::cout << "batterty_voltage: " << voltage << std::endl;
-    // ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
-    std::cout << "heading_angle_current: " << heading_angle << std::endl;
-    // ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
-    std::cout << "heading_angle_expected: " << psi_d << std::endl;
+    // // 方便调试直接在这里输出信息了
+    // // ROS_INFO_STREAM("batterty_voltage: " << voltage);
+    // std::cout << "batterty_voltage: " << voltage << std::endl;
+    // // ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
+    // std::cout << "heading_angle_current: " << heading_angle << std::endl;
+    // // ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
+    // std::cout << "heading_angle_expected: " << psi_d << std::endl;
 
-    // ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
-    std::cout << "velocity_current: " << velocity << std::endl;
-    // ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
-    std::cout << "velocity_expected: " << u_d << std::endl;
+    // // ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
+    // std::cout << "velocity_current: " << velocity << std::endl;
+    // // ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
+    // std::cout << "velocity_expected: " << u_d << std::endl;
 
-    if(!flag_missed_target) //ROS_INFO_STREAM("conectting...........");
-    std::cout << "conectting..........." << std::endl;
-    else //ROS_INFO_STREAM("no Apriltag detected...");
-    std::cout << "no Apriltag detected..." << std::endl;
+    // if(!flag_missed_target) //ROS_INFO_STREAM("conectting...........");
+    // std::cout << "conectting..........." << std::endl;
+    // else //ROS_INFO_STREAM("no Apriltag detected...");
+    // std::cout << "no Apriltag detected..." << std::endl;
 
-    // ROS_INFO_STREAM("left_output: " << left_output); 
-    std::cout <<"left_output: " << left_output << std::endl;
-    // ROS_INFO_STREAM("right_output: " << right_output);
-    std::cout <<"right_output: " << 3000 - right_output << std::endl;
+    // // ROS_INFO_STREAM("left_output: " << left_output); 
+    // std::cout <<"left_output: " << left_output << std::endl;
+    // // ROS_INFO_STREAM("right_output: " << right_output);
+    // std::cout <<"right_output: " << 3000 - right_output << std::endl;
 
-    // ROS_INFO_STREAM("head_output: " << head_output); 
-    std::cout << "head_output: " << head_output << std::endl;
-    // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
-    std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "x: " <<  std::fixed << std::setprecision(2) << point_now_x << std::endl;
-    std::cout << "y: " <<  std::fixed << std::setprecision(2) << point_now_y << std::endl;
+    // // ROS_INFO_STREAM("head_output: " << head_output); 
+    // std::cout << "head_output: " << head_output << std::endl;
+    // // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
+    // std::cout << "tail_output: " << 3000 - tail_output << std::endl;
+    // std::cout << "x: " <<  std::fixed << std::setprecision(2) << point_now_x << std::endl;
+    // std::cout << "y: " <<  std::fixed << std::setprecision(2) << point_now_y << std::endl;
     //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
@@ -442,10 +447,10 @@ int OtterController::stick_to_point(){
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
-  std::cout << angle_z << std::endl;
-  std::cout << angle_hold << std::endl;
-  std::cout << x_error_stick << std::endl;
-  std::cout << y_error_stick << std::endl;
+  // std::cout << angle_z << std::endl;
+  // std::cout << angle_hold << std::endl;
+  // std::cout << x_error_stick << std::endl;
+  // std::cout << y_error_stick << std::endl;
   // std::cout << kp_stick_x << std::endl;
   // std::cout << kp_stick_x * x_error_stick + kd_stick_x * d_hold_x << std::endl;
   // std::cout << stick_to_point_pwm_x << std::endl;
@@ -574,9 +579,35 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &
   record_pos_x_node1 = tag0_x;
   record_pos_y_node1 = tag0_y;
 
+  nav_msgs::Odometry uwb_data;
+
+  uwb_data.header.stamp = ros::Time::now();
+  uwb_data.header.frame_id = "odom_combined";
+  uwb_data.child_frame_id = "base_footprint";
+
+  uwb_data.pose.pose.position.x = point_now_x * 10000;
+  uwb_data.pose.pose.position.y = point_now_y * 10000;
+  uwb_data.pose.pose.position.z = 0;
+
+  uwb_data.pose.pose.orientation.x = 1;
+  uwb_data.pose.pose.orientation.y = 0;
+  uwb_data.pose.pose.orientation.z = 0;
+  uwb_data.pose.pose.orientation.w = 0;
+
+  uwb_data.pose.covariance = {0.1, 0, 0, 0, 0, 0,
+                              0, 0.1, 0, 0, 0, 0,
+                              0, 0, 999999, 0, 0, 0,
+                              0, 0, 0, 999999, 0, 0,
+                              0, 0, 0, 0, 999999, 0,
+                              0, 0, 0, 0, 0, 999999};
+
+  uwb_gps_pub.publish(uwb_data);
+
 }
 
 void OtterController::imu_Callback(const sensor_msgs::Imu& msg){
+
+  static double v_x, position_x, v_y, position_y;
 
   angular_velocity_x = msg.angular_velocity.x;
   angular_velocity_y = msg.angular_velocity.y;
@@ -584,7 +615,16 @@ void OtterController::imu_Callback(const sensor_msgs::Imu& msg){
   angle_z = msg.orientation.z;
   linear_acc_x = msg.linear_acceleration.x;
   linear_acc_y = msg.linear_acceleration.y;
-  // std::cout <<angular_velocity_z <<std::endl;
+
+  // v_x += linear_acc_x;
+  // v_y += linear_acc_y;
+
+  // position_x += v_x;
+  // position_y += v_y;
+  // std::cout <<v_x <<std::endl;
+  // std::cout <<v_y <<std::endl;
+  // std::cout <<position_x <<std::endl;
+  // std::cout <<position_y <<std::endl;
 
 }
 

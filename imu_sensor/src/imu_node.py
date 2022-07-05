@@ -157,13 +157,13 @@ def get_angle(datahex):
 
     return angle_x, angle_y, angle_z
 
-
 def talker():
     rospy.init_node("imu")
     imuPub = rospy.Publisher("imu", Imu, queue_size=1)
-    rate = rospy.Rate(1000)
+    rate = rospy.Rate(100)
 
-    ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0.5)
+    port_name = rospy.get_param('~port','/dev/ttyUSB0')
+    ser = serial.Serial(port_name, 9600, timeout=0.5)
 
     imuMsg = Imu()
     
@@ -173,7 +173,7 @@ def talker():
         DueData(datahex)
 
         stamp = rospy.get_rostime()
-        imuPub = rospy.Publisher("imu", Imu, queue_size=1)
+        imuPub = rospy.Publisher("imu_data", Imu, queue_size=1)
         imuMsg.header.stamp, imuMsg.header.frame_id = stamp, "imu_link"
         #print(Angle[0])
         imuMsg.orientation.x = Angle[0]
