@@ -163,7 +163,7 @@ def talker():
     rate = rospy.Rate(100)
 
     port_name = rospy.get_param('~port','/dev/ttyUSB0')
-    ser = serial.Serial(port_name, 9600, timeout=0.5)
+    ser = serial.Serial(port_name, 115200, timeout=0.5)
 
     imuMsg = Imu()
     

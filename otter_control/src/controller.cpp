@@ -42,7 +42,7 @@ OtterController::OtterController() : T(3, 2)
 
   heading_angle_pub = nh.advertise<std_msgs::Float32>("heading_angle",1);
   ros::Subscriber sub = nh.subscribe("speed_heading", 1000, &OtterController::inputCallback, this); //获得速度和期望航向角
-  ros::Subscriber sub_imu = nh.subscribe("imu", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
+  ros::Subscriber sub_imu = nh.subscribe("imu_data", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
   // ros::Subscriber sub_voltage = nh.subscribe("voltage", 1000, &OtterController::voltage_Callback, this);
   //3400 14v
   ros::Subscriber sub_ariltag = nh.subscribe("/tag_detections", 1, &OtterController::apriltag_Callback, this);
@@ -132,11 +132,11 @@ OtterController::OtterController() : T(3, 2)
 
 #endif
 
-    double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
-    double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_x - stick_to_point_pwm_o;
+    double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_y - stick_to_point_pwm_o;
+    double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_y - stick_to_point_pwm_o;
 
-    double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_y;
-    double tail_output = output_dead + connect_pwm_y - stick_to_point_pwm_y;
+    double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
+    double tail_output = output_dead + connect_pwm_y - stick_to_point_pwm_x;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
@@ -201,8 +201,8 @@ OtterController::OtterController() : T(3, 2)
     // std::cout << "head_output: " << head_output << std::endl;
     // // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
     // std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    // std::cout << "x: " <<  std::fixed << std::setprecision(2) << point_now_x << std::endl;
-    // std::cout << "y: " <<  std::fixed << std::setprecision(2) << point_now_y << std::endl;
+    std::cout << "x: " <<  std::fixed << std::setprecision(2) << point_now_x << std::endl;
+    std::cout << "y: " <<  std::fixed << std::setprecision(2) << point_now_y << std::endl;
     //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
@@ -432,8 +432,8 @@ int OtterController::stick_to_point(){
   static int count, done;
   double radius = 0.5; // holding半径
   //设定点应该自动计算
-  x_error_stick = point_now_x - (-4.0);//Point_set.pose.position.x;
-  y_error_stick = point_now_y - (0.52);//Point_set.pose.position.y;
+  x_error_stick = point_now_x - (1.3);//Point_set.pose.position.x;
+  y_error_stick = point_now_y - (2.5);//Point_set.pose.position.y;
 
   d_hold_x = x_error_stick - x_error_last;
   d_hold_y = y_error_stick - y_error_last;
@@ -442,13 +442,13 @@ int OtterController::stick_to_point(){
   y_error_last = y_error_stick;
   
   stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
-  stick_to_point_pwm_y = -(kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
+  stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   stick_to_point_pwm_o =  - (kp_stick_o * (angle_z - angle_hold) + kd_stick_o * angular_velocity_z);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
-  // std::cout << angle_z << std::endl;
-  // std::cout << angle_hold << std::endl;
+  std::cout << angle_z << std::endl;
+  std::cout << angle_hold << std::endl;
   // std::cout << x_error_stick << std::endl;
   // std::cout << y_error_stick << std::endl;
   // std::cout << kp_stick_x << std::endl;
@@ -582,11 +582,11 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &
   nav_msgs::Odometry uwb_data;
 
   uwb_data.header.stamp = ros::Time::now();
-  uwb_data.header.frame_id = "odom_combined";
+  uwb_data.header.frame_id = "odom";
   uwb_data.child_frame_id = "base_footprint";
 
-  uwb_data.pose.pose.position.x = point_now_x * 10000;
-  uwb_data.pose.pose.position.y = point_now_y * 10000;
+  uwb_data.pose.pose.position.x = point_now_x;
+  uwb_data.pose.pose.position.y = point_now_y;
   uwb_data.pose.pose.position.z = 0;
 
   uwb_data.pose.pose.orientation.x = 1;
@@ -594,12 +594,12 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &
   uwb_data.pose.pose.orientation.z = 0;
   uwb_data.pose.pose.orientation.w = 0;
 
-  uwb_data.pose.covariance = {0.1, 0, 0, 0, 0, 0,
-                              0, 0.1, 0, 0, 0, 0,
-                              0, 0, 999999, 0, 0, 0,
-                              0, 0, 0, 999999, 0, 0,
-                              0, 0, 0, 0, 999999, 0,
-                              0, 0, 0, 0, 0, 999999};
+  uwb_data.pose.covariance = {0.0225*25, 0, 0, 0, 0, 0,
+                              0, 0.0225*25, 0, 0, 0, 0,
+                              0, 0, 0.1, 0, 0, 0,
+                              0, 0, 0, 0.1, 0, 0,
+                              0, 0, 0, 0, 0.1, 0,
+                              0, 0, 0, 0, 0, 0.1};
 
   uwb_gps_pub.publish(uwb_data);
 
@@ -621,15 +621,15 @@ void OtterController::imu_Callback(const sensor_msgs::Imu& msg){
 
   // position_x += v_x;
   // position_y += v_y;
-  // std::cout <<v_x <<std::endl;
-  // std::cout <<v_y <<std::endl;
-  // std::cout <<position_x <<std::endl;
-  // std::cout <<position_y <<std::endl;
+  // std::cout << "速度_x:" << v_x <<std::endl;
+  // std::cout << "速度_y:" << v_y <<std::endl;
+  // std::cout << "位置_x:" << position_x <<std::endl;
+  // std::cout << "位置_y:"<< position_y <<std::endl;
 
 }
 
 double OtterController::abnomal_detect(double now, double last){
-  return (now - last) > 0.10 ? last : now; 
+  return (now - last) > 0.20 ? last : now; 
 }
 
 void OtterController::voltage_Callback(const std_msgs::Float32& msg){

@@ -9,20 +9,35 @@ witmotion_imu:
         measurements:
             acceleration:
                 enabled: true
-                covariance: [ 0.0075,    0,       0,
-                              0,         0.0039,  0,
-                              0,         0,       0.0034 ]
+                covariance: [ 0.0000075,    0,       0,
+                              0,         0.0000039,  0,
+                              0,         0,       0.0000034 ]
             angular_velocity:
                 enabled: true
-                covariance: [ 0.0075,    0,       0,
-                              0,         0.0039,  0,
-                              0,         0,       0.0034 ]
+                covariance: [ 0.0000075,    0,       0,
+                              0,         0.0000039,  0,
+                              0,         0,       0.0000034 ]
             orientation:
                 enabled: true
-                covariance: [ 0.0213,    0,       0,
-                              0,         0.0429,  0,
-                              0,         0,       0.000001      ]
-                            #                     0
+                covariance: [ 0.000075,    0,       0,
+                              0,         0.000075,  0,
+                              0,         0,       0.00030      ]
+                            #   
+            #     covariance: [ 0.0075,    0,       0,
+            #                   0,         0.0039,  0,
+            #                   0,         0,       0.0034 ]
+            # angular_velocity:
+            #     enabled: true
+            #     covariance: [ 0.0075,    0,       0,
+            #                   0,         0.0039,  0,
+            #                   0,         0,       0.0034 ]
+            # orientation:
+            #     enabled: true
+            #     covariance: [ 0.0213,    0,       0,
+            #                   0,         0.0429,  0,
+            #                   0,         0,       0.1      ]                            
+                            
+            #                                   0
     temperature_publisher:
         enabled: false
         topic_name: /temperature
