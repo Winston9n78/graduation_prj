@@ -34,7 +34,7 @@ OtterController::OtterController() : T(3, 2)
   m_headPub = nh.advertise<std_msgs::Float32>("head_thrust_cmd", 10);
   m_tailPub = nh.advertise<std_msgs::Float32>("tail_thrust_cmd", 10);
 
-  ok_to_latch = nh.advertise<std_msgs::Bool>("is_ok", 10);
+  ok_to_latch = nh.advertise<std_msgs::Bool>("is_ok_from_b", 10);
 
   usv_status_pub = nh.advertise<otter_control::usv_status>("usv_status",1);
 

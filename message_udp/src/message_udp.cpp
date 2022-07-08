@@ -12,6 +12,7 @@
 
 #include "ros/ros.h"
 #include "std_msgs/Float32.h"
+#include "std_msgs/Bool.h"
 #include <otter_control/usv_status.h>
 
 std::stringstream ss;
@@ -20,24 +21,32 @@ std::stringstream ss;
 
 float usv_x = 0.1, usv_y = 0.12345, usv_orien = 0.123456;
 
+int is_ok = 0;
+
+int is_ok_from_a = 0; // 将接收到的另一艘船的解码的变量
+
 void usv_status_callback(const otter_control::usv_status msg){
     usv_x = msg.position_z;
     usv_y = msg.position_x;
     usv_orien = msg.orientation_pitch;
 }
 
+void to_lock_callback(const std_msgs::Bool msg){
+    is_ok = msg.data;
+}
+
 int main(int argc, char** argv)
 {
 
-  ros::init(argc, argv, "latch_control");
+  ros::init(argc, argv, "messsage_udp_node");
 
   ros::NodeHandle nh;
 
-  ros::Publisher latch_signal, is_lock_ok;
+  ros::Publisher is_ok_pub;
 
   ros::Subscriber status_sub = nh.subscribe("usv_status", 1, &usv_status_callback);
-  latch_signal = nh.advertise<std_msgs::Float32>("latch_command", 1);
-
+  ros::Subscriber to_lock_sub = nh.subscribe("is_ok_from_b", 1, &to_lock_callback);
+  is_ok_pub = nh.advertise<std_msgs::Bool>("is_ok_from_a", 1);
   /* sock_fd --- socket文件描述符 创建udp套接字*/
   int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
   if(sock_fd < 0)
@@ -82,9 +91,14 @@ int main(int argc, char** argv)
   while(nh.ok())
   {
     std::stringstream ss;
-    std::string usv_status = "x:";
+    std::string lock_status = "is_ok_from_b:";
 
-    /****把姿态以一定格式发送出去****/
+    /*发送动锁信号*/
+    ss <<  is_ok;
+    std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
+    lock_status += asString;
+
+    /****把姿态以一定格式发送出去***
     ss <<  usv_x;
     std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
     usv_status += asString;
@@ -100,9 +114,9 @@ int main(int argc, char** argv)
     ss << usv_orien;
     asString = ss.str();
     usv_status += asString;
-    /****把姿态以一定格式发送出去****/
+    ***把姿态以一定格式发送出去****/
 
-    std::cout << usv_status << std::endl;
+    // std::cout << lock_status << std::endl;
 
     // printf("server wait:\n");
     
@@ -121,13 +135,17 @@ int main(int argc, char** argv)
     recv_buf[recv_num] = '\0';
     printf("server receive %d bytes: %s\n", recv_num, recv_buf);
 
-    send_num = sendto(sock_fd, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client_, len);
+    send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client_, len);
 
     if(send_num < 0)
     {
       perror("sendto error:");
       exit(1);
     }
+
+    std_msgs::Bool is_ok_from_a_;
+    is_ok_from_a_.data = static_cast<bool>(is_ok_from_a);
+    is_ok_pub.publish(is_ok_from_a_);
 
     ros::spinOnce();
     rate.sleep();
