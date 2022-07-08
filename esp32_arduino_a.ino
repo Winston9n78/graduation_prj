@@ -98,10 +98,10 @@ void setup()
    pinMode(b_up, OUTPUT);
    pinMode(b_down, OUTPUT);
 //   
-//   digitalWrite(a_up, HIGH);
-//   digitalWrite(a_down, LOW);
-//   digitalWrite(a_down, LOW);
-//   digitalWrite(a_down, LOW);
+   digitalWrite(a_up, HIGH);
+   digitalWrite(a_down, HIGH);
+   digitalWrite(a_down, HIGH);
+   digitalWrite(a_down, HIGH);
 //   delay(5000);
 //   digitalWrite(a_up, 0);
 //   delay(5000);
@@ -142,6 +142,10 @@ void setup()
 void loop()
 {
 
+   static int count_a_up,count_b_up,count_a_down,count_b_down;
+   static int lock_flag_a_up = 0,lock_flag_a_down = 0;
+   static int lock_flag_b_up = 0,lock_flag_b_down = 0;
+
 //  signal = signal + a*1;
 //  if(signal >= 1900) a = -1;
 //  else if(signal <= 1100) a = 1;
@@ -157,13 +161,15 @@ void loop()
 //      
 //    }
 //    Serial.print("\n");
-      
+
+// channels[8]和channels[4]各控制一个 向上306，控制钩子开关，一个方向给一个引脚输出一个低电平脉冲
+     
    if(channels[9] == 306) {
 
-    int a0 = 3000-(channels[2]+483);
-    int a1 = (1500 -  (channels[0]+500));
+    int a0 = 3000-((channels[1]+67)+483);
+    int a1 = (1500 - (channels[0]+500));
 
-    int  b0 = (channels[2]+483);
+    int  b0 = ((channels[1]+67)+483);
     int  b1 = (1500 - (channels[0]+500));
 
     int c0 = (channels[3]+500);
@@ -172,23 +178,93 @@ void loop()
     int left = a0 - a1;
     int right = b0 - b1;
 
-            if(left >= 1700) left = 1700;
+    if(left >= 1700) left = 1700;
     if(left <= 1300) left = 1300;
 
-            if(right >= 1700) right = 1700;
+    if(right >= 1700) right = 1700;
     if(right <= 1300) right = 1300;
 
-        if(c0 >= 1700) c0 = 1700;
+    if(c0 >= 1700) c0 = 1700;
     if(c0 <= 1300) c0 = 1300;
 
-        if(d0 >= 1700) d0 = 1700;
+    if(d0 >= 1700) d0 = 1700;
     if(d0 <= 1300) d0 = 1300;
+
+    if(channels[8] == 306){
+
+       if(!lock_flag_a_up){
+        
+         count_a_up++;//控制脉冲时间
+         if(count_a_up < 100){ //0.5秒
+            digitalWrite(a_up, LOW);
+            
+         }
+         else{
+            digitalWrite(a_up, HIGH);
+            count_a_up = 0;
+            lock_flag_a_up = 1;
+            lock_flag_a_down = 0;
+         }
+       } 
+      }
+    else{
+       
+       if(!lock_flag_a_down){
+         
+         count_a_down++;//控制脉冲时间
+         if(count_a_down < 100){ //0.5秒
+            digitalWrite(a_down, LOW);
+            
+         }
+         else{
+            digitalWrite(a_down, HIGH);
+            count_a_down = 0;
+            lock_flag_a_down = 1;
+            lock_flag_a_up = 0;
+         }
+       } 
+      }   
+
+    if(channels[4] == 306){
+       if(!lock_flag_b_up){
+        
+         count_b_up++;//控制脉冲时间
+         if(count_b_up < 100){ //0.5秒
+            digitalWrite(b_up, LOW);
+            
+         }
+         else{
+            digitalWrite(b_up, HIGH);
+            count_b_up = 0;
+            lock_flag_b_up = 1;
+            lock_flag_b_down = 0;
+         }
+       } 
+      }
+    else{
+       
+       if(!lock_flag_b_down){
+         
+         count_b_down++;//控制脉冲时间
+         if(count_b_down < 100){ //0.5秒
+            digitalWrite(b_down, LOW);
+            
+         }
+         else{
+            digitalWrite(b_down, HIGH);
+            count_b_down = 0;
+            lock_flag_b_down = 1;
+            lock_flag_b_up = 0;
+         }
+       } 
+      }       
+      
     
     servo_left.writeMicroseconds(left); //forward fan
     servo_right.writeMicroseconds(right); 
     servo_head.writeMicroseconds(c0); 
-    servo_tail.writeMicroseconds(d0); 
-    
+    servo_tail.writeMicroseconds(d0);    
+   
     }
 
    else{
@@ -197,17 +273,19 @@ void loop()
     servo_right.writeMicroseconds(value2); 
     servo_head.writeMicroseconds(value3); 
     servo_tail.writeMicroseconds(value4); 
-  
-  }
 
-//  analog_value = analogRead(ANALOG_PIN);
-//  adc_msg.data = analog_value;
-//  chatter.publish( &adc_msg );
-//
-   digitalWrite(a_up, lock_control[0]);
-   digitalWrite(a_down, lock_control[1]);
-   digitalWrite(b_up, lock_control[2]);
-   digitalWrite(b_down, lock_control[3]);
+    digitalWrite(a_up, lock_control[0]);
+    digitalWrite(a_down, lock_control[1]);
+    digitalWrite(b_up, lock_control[2]);
+    digitalWrite(b_down, lock_control[3]);
+    
+   }
+
+////  analog_value = analogRead(ANALOG_PIN);
+////  adc_msg.data = analog_value;
+////  chatter.publish( &adc_msg );
+
+
 
    nh.spinOnce();
    delay(5);

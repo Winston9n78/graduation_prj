@@ -81,7 +81,6 @@ int main(int argc, char** argv){
             ros::Duration(5).sleep(); /*10s等待动作完成*/
             
             done = false;
-            latch_signal.publish(control_cmd);
         }
         done_.data = done;
         is_lock_ok.publish(done_);
