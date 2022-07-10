@@ -126,7 +126,7 @@ private:
 
   double camera_x = 0, camera_y = 0, camera_z = 0, camera_fi = 0;
   double camera_pitch = 0; //作为yaw
-  double connect_pwm_y, connect_pwm_x, connect_pwm_orientation,connect_pwm_fi;
+  double connect_pwm_y = 0, connect_pwm_x = 0, connect_pwm_orientation = 0,connect_pwm_fi = 0;
 
   double point_now_x, point_now_y, point_now_z;
   double point_set_x = 1.5, point_set_y = 1.5, point_set_z;
@@ -142,7 +142,7 @@ private:
 
   bool Arrive_master = false, Arrive_slave;
 
-  double y_error_connect, x_error_connect, orientation_error;
+  double y_error_connect = 0, x_error_connect = 0, orientation_error = 0;
   double d_y = 0,d_x = 0,d_o = 0,d_fi = 0;
   double x_error_stick, y_error_stick;
 

@@ -42,45 +42,45 @@ int main(int argc, char** argv){
     double frequency = 100.0;
     double deltaTime = 1.0 / frequency;
     ros::Rate rate(frequency);
-    while (nh.ok()) {
-        if(1){ // 勾住 (is_ok_a||is_ok_b) && !done
-            control_cmd.data[a_down] = 0;/*勾住流程电平还不确定的，这里暂时示范*/
-            latch_signal.publish(control_cmd);
-            ros::Duration(1).sleep(); // 0.5ms脉冲
-            control_cmd.data[a_down] = 1;
-            latch_signal.publish(control_cmd);/*延时操作,延时前的状态也需要发布*/
-            std::cout << "钩闭合" << std::endl;
-            ros::Duration(5).sleep(); /*10s等待动作完成*/
-            
-            control_cmd.data[b_down] = 0;
-            latch_signal.publish(control_cmd);
-            ros::Duration(1).sleep(); // 0.5ms脉冲
-            control_cmd.data[b_down] = 1;
-            latch_signal.publish(control_cmd);
-            std::cout << "收钩" << std::endl;
-            ros::Duration(5).sleep();/*10s等待动作完成*/
-            
-            done = true; /*勾住动作完成*/
-        }
-        else if(!is_ok_a||!is_ok_b && done){ // 勾住失败而打开
-            
-            control_cmd.data[b_up] = 0;
-            latch_signal.publish(control_cmd);
-            ros::Duration(1).sleep(); // 0.5ms脉冲
-            control_cmd.data[b_up] = 1;
-            latch_signal.publish(control_cmd);
-            std::cout << "钩伸出去" << std::endl;
-            ros::Duration(5).sleep();/*10s等待动作完成*/
 
-            control_cmd.data[a_up] = 0;/*勾住流程电平还不确定的，这里暂时示范*/
-            latch_signal.publish(control_cmd);
-            ros::Duration(1).sleep(); // 0.5ms脉冲
-            control_cmd.data[a_up] = 1;
+    static int count;
+    while (nh.ok()) {
+        if(!done){ // 勾住 (is_ok_a||is_ok_b) && !done
+            count++;
+            if(count < 50){
+              control_cmd.data[a_down] = 0;/*勾住流程电平还不确定的，这里暂时示范*/
+              control_cmd.data[b_down] = 0;
+            }
+            else{
+              control_cmd.data[a_down] = 1;
+              control_cmd.data[b_down] = 1;
+            }
             latch_signal.publish(control_cmd);/*延时操作,延时前的状态也需要发布*/
-            std::cout << "钩打开" << std::endl;
-            ros::Duration(5).sleep(); /*10s等待动作完成*/
-            
-            done = false;
+
+            if(count > 800){
+              std::cout << "钩闭合" << std::endl;
+              done = true; /*勾住动作完成*/
+              count = 0;
+            }
+
+        }
+        else if((is_ok_a||is_ok_b) && done){ // 勾住失败而打开
+            count++;
+            if(count < 50){
+              control_cmd.data[a_up] = 0;/*勾住流程电平还不确定的，这里暂时示范*/
+              control_cmd.data[b_up] = 0;
+            }
+            else{
+              control_cmd.data[a_up] = 1;
+              control_cmd.data[b_up] = 1;
+            }
+            latch_signal.publish(control_cmd);/*延时操作,延时前的状态也需要发布*/
+
+            if(count > 800){
+              std::cout << "钩打开" << std::endl;
+              done = false; /*勾住动作完成*/
+              count = 0;
+            }
         }
         done_.data = done;
         is_lock_ok.publish(done_);

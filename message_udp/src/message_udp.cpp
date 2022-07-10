@@ -120,11 +120,11 @@ int main(int argc, char** argv)
 
     // printf("server wait:\n");
     
-    if(!flag){
-      recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
-      addr_client_ = addr_client;
-      flag = 1;
-    }
+    // if(!flag){
+    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
+    addr_client_ = addr_client;
+      // flag = 1;
+    // }
     
     if(recv_num < 0)
     {
@@ -134,6 +134,13 @@ int main(int argc, char** argv)
 
     recv_buf[recv_num] = '\0';
     printf("server receive %d bytes: %s\n", recv_num, recv_buf);
+
+    /*提取数字给is_ok_from_a*/
+    const char *d = ":";
+    char *p;
+    p = std::strtok(recv_buf, d);
+    p = std::strtok(NULL, d);
+    is_ok_from_a = atoi(p);
 
     send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client_, len);
 

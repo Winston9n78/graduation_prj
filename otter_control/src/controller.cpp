@@ -34,7 +34,7 @@ OtterController::OtterController() : T(3, 2)
   m_headPub = nh.advertise<std_msgs::Float32>("head_thrust_cmd", 10);
   m_tailPub = nh.advertise<std_msgs::Float32>("tail_thrust_cmd", 10);
 
-  ok_to_latch = nh.advertise<std_msgs::Bool>("is_ok_from_b", 10);
+  ok_to_latch = nh.advertise<std_msgs::Bool>("is_ok_from_b", 1);
 
   usv_status_pub = nh.advertise<otter_control::usv_status>("usv_status",1);
 
@@ -105,7 +105,7 @@ OtterController::OtterController() : T(3, 2)
 
     //  std::cout << "角度输出：" << tauYaw << std::endl;
 
-     stick_to_point();
+    // stick_to_point();
 
 #if 0 /*对接测试*/
 
@@ -174,35 +174,36 @@ OtterController::OtterController() : T(3, 2)
     ok_to_latch.publish(is_ok_);
 
 
-    // // 方便调试直接在这里输出信息了
-    // // ROS_INFO_STREAM("batterty_voltage: " << voltage);
-    // std::cout << "batterty_voltage: " << voltage << std::endl;
-    // // ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
-    // std::cout << "heading_angle_current: " << heading_angle << std::endl;
-    // // ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
-    // std::cout << "heading_angle_expected: " << psi_d << std::endl;
+    // 方便调试直接在这里输出信息了
+    // ROS_INFO_STREAM("batterty_voltage: " << voltage);
+    std::cout << "batterty_voltage: " << voltage << std::endl;
+    // ROS_INFO_STREAM("heading_angle_current: " << heading_angle);
+    std::cout << "heading_angle_current: " << heading_angle << std::endl;
+    // ROS_INFO_STREAM("heading_angle_expected: " << psi_d);
+    std::cout << "heading_angle_expected: " << psi_d << std::endl;
 
-    // // ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
-    // std::cout << "velocity_current: " << velocity << std::endl;
-    // // ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
-    // std::cout << "velocity_expected: " << u_d << std::endl;
+    // ROS_INFO_STREAM("velocity_current: " << velocity); // 目前直接给,在.h文件中，应该直接给出来
+    std::cout << "velocity_current: " << velocity << std::endl;
+    // ROS_INFO_STREAM("velocity_expected: " << u_d); // 发布的u， velocity
+    std::cout << "velocity_expected: " << u_d << std::endl;
 
-    // if(!flag_missed_target) //ROS_INFO_STREAM("conectting...........");
-    // std::cout << "conectting..........." << std::endl;
-    // else //ROS_INFO_STREAM("no Apriltag detected...");
-    // std::cout << "no Apriltag detected..." << std::endl;
+    if(!flag_missed_target) //ROS_INFO_STREAM("conectting...........");
+    std::cout << "conectting..........." << std::endl;
+    else //ROS_INFO_STREAM("no Apriltag detected...");
+    std::cout << "no Apriltag detected..." << std::endl;
 
-    // // ROS_INFO_STREAM("left_output: " << left_output); 
-    // std::cout <<"left_output: " << left_output << std::endl;
-    // // ROS_INFO_STREAM("right_output: " << right_output);
-    // std::cout <<"right_output: " << 3000 - right_output << std::endl;
+    // ROS_INFO_STREAM("left_output: " << left_output); 
+    std::cout <<"left_output: " << left_output << std::endl;
+    // ROS_INFO_STREAM("right_output: " << right_output);
+    std::cout <<"right_output: " << 3000 - right_output << std::endl;
 
-    // // ROS_INFO_STREAM("head_output: " << head_output); 
-    // std::cout << "head_output: " << head_output << std::endl;
-    // // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
-    // std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "x: " <<  std::fixed << std::setprecision(2) << point_now_x << std::endl;
-    std::cout << "y: " <<  std::fixed << std::setprecision(2) << point_now_y << std::endl;
+    // ROS_INFO_STREAM("head_output: " << head_output); 
+    std::cout << "head_output: " << head_output << std::endl;
+    // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
+    std::cout << "tail_output: " << 3000 - tail_output << std::endl;
+    std::cout << "x: " <<  std::fixed << std::setprecision(2) << x_error_connect << std::endl;
+    std::cout << "y: " <<  std::fixed << std::setprecision(2) << y_error_connect << std::endl;
+    std::cout << "y: " <<  std::fixed << std::setprecision(2) << orientation_error << std::endl;
     //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
@@ -226,8 +227,8 @@ int OtterController::latching_algorithm(){
 
   static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
 
-  connect_pwm_y = minimize(y_error_connect, kp_con_y, kd_con_y, d_y);
-  connect_pwm_orientation = minimize(orientation_error + 0.5, kp_con_orient, kd_con_orient, angular_velocity_z);
+  connect_pwm_y = minimize(y_error_connect - 0.17, kp_con_y, kd_con_y, d_y);
+  connect_pwm_orientation = minimize(orientation_error - 2.7, kp_con_orient, kd_con_orient, angular_velocity_z);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 /**********************************MIT的控制思路*************************************************/
     // if(prepared_flag){
@@ -255,36 +256,47 @@ int OtterController::latching_algorithm(){
     //     prepared_flag = 1;
     //   }
     // }
-    if(y_error_connect < 0.1 && y_error_connect > -0.1 && orientation_error < 5 && orientation_error > -5)
-      connect_pwm_x = minimize(x_error_connect - 1.32, kp_con_x, kd_con_x, d_x);//测试
-    else //扰动时退回来一点点
-      connect_pwm_x = 0;//minimize(x_error_connect - 1.32 - 0.15, kp_con_x, kd_con_x, d_x);
-
+    // if((y_error_connect - 0.13) < 0.1 && (y_error_connect - 0.13) > -0.1 && orientation_error < 5 && orientation_error > -5)
+    //   connect_pwm_x = minimize(x_error_connect - 1.3, kp_con_x, kd_con_x, d_x);//测试
+    // else //扰动时退回来一点点
+    //   connect_pwm_x = 0;//minimize(x_error_connect - 1.32 - 0.15, kp_con_x, kd_con_x, d_x);
+    // // b船运行：ottercontrol message_udp  a船运行：roscore rosserial_python latch_control message_udp
+    // // b船先运行起来，再运行a船
+    // if((x_error_connect - 1.3) < 0.05 && (x_error_connect - 0.05) > -0.1 
+    //   && orientation_error < 5 && orientation_error > -5
+    //   &&(y_error_connect - 0.13) < 0.05 && (y_error_connect - 0.13) > -0.05) is_ok = 1;//锁开始闭合
 /*****************************本船对接******************************************************/
-    // if(!done_flag){
-    //   if(!back_flag){
-    //     connect_pwm_x = minimize(x_error_connect - 1.0, kp_con_x, kd_con_x, d_x);
-    //     if((x_error_connect - 1.0) < 0.05 && (x_error_connect - 1.0) > -0.05 && orientation_error < -5 && orientation_error > -5) is_ok = 1;//锁开始闭合
-    //   }
-    //   if(is_lock_ok){
-    //     connect_pwm_x = minimize(x_error_connect - 1.5, kp_con_x, kd_con_x, d_x);
-    //     back_flag = 1; /*正在后退*/
-    //     start = 1; /*开始计时*/
-    //   }
+    if(!done_flag){
+      if(!back_flag){
+        if((y_error_connect - 0.13) < 0.1 && (y_error_connect - 0.13) > -0.1 && orientation_error < 5 && orientation_error > -5)
+          connect_pwm_x = minimize(x_error_connect - 1.3, kp_con_x, kd_con_x, d_x);//测试
+        else //扰动时退回来一点点
+          connect_pwm_x = 0;//minimize(x_error_connect - 1.32 - 0.15, kp_con_x, kd_con_x, d_x);
+        // b船运行：ottercontrol message_udp  a船运行：roscore rosserial_python latch_control message_udp
+        // b船先运行起来，再运行a船
+        if((x_error_connect - 1.3) < 0.05 && (x_error_connect - 0.05) > -0.1 
+          && orientation_error < 5 && orientation_error > -5
+          &&(y_error_connect - 0.13) < 0.05 && (y_error_connect - 0.13) > -0.05) is_ok = 1;//锁开始闭合
+      }
+      if(is_lock_ok){
+        connect_pwm_x = minimize(x_error_connect - 1.6, kp_con_x, kd_con_x, d_x);
+        back_flag = 1; /*正在后退*/
+        start = 1; /*开始计时*/
+      }
 
-    //   if(is_lock_ok && back_flag && count > 30){
-    //     if(x_error_connect - 1.2 < 0){
-    //       done_flag = 1;/*退出对接程序*/
-    //     }
-    //     /*对接失败*/
-    //     else if((x_error_connect - 1.5) < 0.08 && (x_error_connect - 1.5) > -0.08){ 
-    //       back_flag = 0; /*后退标志位置0*/
-    //       is_ok = 0; /*锁打开*/
-    //       start = 0; /*关闭计时*/
-    //       count = 0; /*清空计数*/
-    //     }
-    //   }
-    // }
+      if(is_lock_ok && back_flag && count > 30){
+        if(x_error_connect - 1.2 < 0){
+          done_flag = 1;/*退出对接程序*/
+        }
+        /*对接失败*/
+        else if((x_error_connect - 1.6) < 0.08 && (x_error_connect - 1.5) > -0.08){ 
+          back_flag = 0; /*后退标志位置0*/
+          is_ok = 0; /*锁打开*/
+          start = 0; /*关闭计时*/
+          count = 0; /*清空计数*/
+        }
+      }
+    }
     // else{
     //   connect_pwm_y = 0;
     //   connect_pwm_orientation = 0;
