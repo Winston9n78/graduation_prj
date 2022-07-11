@@ -128,7 +128,7 @@ OtterController::OtterController() : T(3, 2)
 
 #else /* 对准测试 */
 
-    latching_algorithm();
+   latching_algorithm();
 
 #endif
 
@@ -226,9 +226,12 @@ return 1：对接成功
 int OtterController::latching_algorithm(){
 
   static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
+  const double x_offset = 1.36, x_offset_back = 1.8;
+  const double y_offset = 0.03;
+  const double o_offset = 2.9;
 
-  connect_pwm_y = minimize(y_error_connect - 0.17, kp_con_y, kd_con_y, d_y);
-  connect_pwm_orientation = minimize(orientation_error - 2.7, kp_con_orient, kd_con_orient, angular_velocity_z);
+  connect_pwm_y = minimize(y_error_connect - y_offset, kp_con_y, kd_con_y, d_y);
+  connect_pwm_orientation = minimize(orientation_error - o_offset, kp_con_orient, kd_con_orient, angular_velocity_z);
   if(!flag_missed_target){ //如果扫描到了tag就开始，否则就按照LOS继续跑就行
 /**********************************MIT的控制思路*************************************************/
     // if(prepared_flag){
@@ -266,42 +269,61 @@ int OtterController::latching_algorithm(){
     //   && orientation_error < 5 && orientation_error > -5
     //   &&(y_error_connect - 0.13) < 0.05 && (y_error_connect - 0.13) > -0.05) is_ok = 1;//锁开始闭合
 /*****************************本船对接******************************************************/
+    
     if(!done_flag){
       if(!back_flag){
-        if((y_error_connect - 0.13) < 0.1 && (y_error_connect - 0.13) > -0.1 && orientation_error < 5 && orientation_error > -5)
-          connect_pwm_x = minimize(x_error_connect - 1.3, kp_con_x, kd_con_x, d_x);//测试
+        if((y_error_connect - y_offset) < 0.1 && (y_error_connect - y_offset) > -0.1 
+            && (orientation_error - o_offset) < 5 && (orientation_error - o_offset) > -5)
+          connect_pwm_x = minimize(x_error_connect - x_offset, kp_con_x, kd_con_x, d_x);//测试
         else //扰动时退回来一点点
           connect_pwm_x = 0;//minimize(x_error_connect - 1.32 - 0.15, kp_con_x, kd_con_x, d_x);
         // b船运行：ottercontrol message_udp  a船运行：roscore rosserial_python latch_control message_udp
         // b船先运行起来，再运行a船
-        if((x_error_connect - 1.3) < 0.05 && (x_error_connect - 0.05) > -0.1 
-          && orientation_error < 5 && orientation_error > -5
-          &&(y_error_connect - 0.13) < 0.05 && (y_error_connect - 0.13) > -0.05) is_ok = 1;//锁开始闭合
+        if((x_error_connect - x_offset) < 0.05 && (x_error_connect - x_offset) > -0.05 
+          && (orientation_error - o_offset) < 5 && (orientation_error - o_offset) > -5
+          &&(y_error_connect - y_offset) < 0.05 && (y_error_connect - y_offset) > -0.05) is_ok = 1;//锁开始闭合
       }
+
+      if(is_ok && !is_lock_ok){
+        start = 1;
+        if(count > 80){
+          start = 0;
+          count = 0;
+          is_lock_ok = 1;
+        }
+      }
+
       if(is_lock_ok){
-        connect_pwm_x = minimize(x_error_connect - 1.6, kp_con_x, kd_con_x, d_x);
+        connect_pwm_x = minimize(x_error_connect - x_offset_back, kp_con_x, kd_con_x, d_x);
         back_flag = 1; /*正在后退*/
         start = 1; /*开始计时*/
       }
 
-      if(is_lock_ok && back_flag && count > 30){
-        if(x_error_connect - 1.2 < 0){
+      if(is_lock_ok && back_flag && count > 30){ //大于3秒才开始判断，判断的同时一直在后退
+        if((x_error_connect - x_offset) < 0.08 && (x_error_connect - x_offset) > -0.08){ //3秒距离拉开不超过这个点
           done_flag = 1;/*退出对接程序*/
         }
         /*对接失败*/
-        else if((x_error_connect - 1.6) < 0.08 && (x_error_connect - 1.5) > -0.08){ 
+        else if((x_error_connect - x_offset_back) < 0.08 && (x_error_connect - x_offset_back) > -0.08){ 
           back_flag = 0; /*后退标志位置0*/
           is_ok = 0; /*锁打开*/
           start = 0; /*关闭计时*/
           count = 0; /*清空计数*/
+          is_lock_ok = 0;
         }
+        
       }
     }
-    // else{
-    //   connect_pwm_y = 0;
-    //   connect_pwm_orientation = 0;
-    //   connect_pwm_x = 0;
-    // }
+    std::cout << "back_flag: " << back_flag << std::endl;
+    std::cout << "count: " << count << std::endl;
+    std::cout << "done_flag: " << done_flag << std::endl;
+    std::cout << "x_error_connect - x_offset_back: " << x_error_connect - x_offset_back << std::endl;
+     
+    if(done_flag){
+      connect_pwm_y = 0;
+      connect_pwm_orientation = 0;
+      connect_pwm_x = 0;
+    }
 
 /*******************************************************************************/
 
@@ -453,8 +475,8 @@ int OtterController::stick_to_point(){
   x_error_last = x_error_stick;
   y_error_last = y_error_stick;
   
-  stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
-  stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
+  stick_to_point_pwm_x = 0;//(kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
+  stick_to_point_pwm_y = 0;//(kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   stick_to_point_pwm_o =  - (kp_stick_o * (angle_z - angle_hold) + kd_stick_o * angular_velocity_z);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
