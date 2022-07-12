@@ -38,15 +38,15 @@ void to_lock_callback(const std_msgs::Bool msg){
 int main(int argc, char** argv)
 {
 
-  ros::init(argc, argv, "messsage_udp_node");
+  ros::init(argc, argv, "messsage_udp_status_node");
 
   ros::NodeHandle nh;
 
   ros::Publisher is_ok_pub;
 
   ros::Subscriber status_sub = nh.subscribe("usv_status", 1, &usv_status_callback);
-  ros::Subscriber to_lock_sub = nh.subscribe("is_ok_from_b", 1, &to_lock_callback);
-  is_ok_pub = nh.advertise<std_msgs::Bool>("is_ok_from_a", 1);
+  // ros::Subscriber to_lock_sub = nh.subscribe("is_ok_from_b", 1, &to_lock_callback);
+  // is_ok_pub = nh.advertise<std_msgs::Bool>("is_ok_from_a", 1);
   /* sock_fd --- socket文件描述符 创建udp套接字*/
   int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
   if(sock_fd < 0)
@@ -85,20 +85,20 @@ int main(int argc, char** argv)
   struct sockaddr_in addr_client_;
   int flag = 0;
 
-  double frequency = 1.0;
+  double frequency = 10.0;
   ros::Rate rate(frequency);
 
   while(nh.ok())
   {
     std::stringstream ss;
-    std::string lock_status = "is_ok_from_b:";
+    std::string usv_status = "x:";
 
     /*发送动锁信号*/
-    ss <<  is_ok;
-    std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
-    lock_status += asString;
+    // ss <<  is_ok;
+    // std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
+    // lock_status += asString;
 
-    /****把姿态以一定格式发送出去***
+    /****把姿态以一定格式发送出去***/
     ss <<  usv_x;
     std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
     usv_status += asString;
@@ -114,14 +114,14 @@ int main(int argc, char** argv)
     ss << usv_orien;
     asString = ss.str();
     usv_status += asString;
-    ***把姿态以一定格式发送出去****/
+    /***把姿态以一定格式发送出去****/
 
     // std::cout << lock_status << std::endl;
 
     // printf("server wait:\n");
     
     // if(!flag){
-    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
+    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), MSG_DONTWAIT, (struct sockaddr *)&addr_client, (socklen_t *)&len);
     addr_client_ = addr_client;
       // flag = 1;
     // }
@@ -139,10 +139,10 @@ int main(int argc, char** argv)
     const char *d = ":";
     char *p;
     p = std::strtok(recv_buf, d);
-    p = std::strtok(NULL, d);
-    is_ok_from_a = atoi(p);
+    // p = std::strtok(NULL, d);
+    // is_ok_from_a = atoi(p);
 
-    send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client_, len);
+    send_num = sendto(sock_fd, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client_, len);
 
     if(send_num < 0)
     {
@@ -150,9 +150,9 @@ int main(int argc, char** argv)
       exit(1);
     }
 
-    std_msgs::Bool is_ok_from_a_;
-    is_ok_from_a_.data = static_cast<bool>(is_ok_from_a);
-    is_ok_pub.publish(is_ok_from_a_);
+    // std_msgs::Bool is_ok_from_a_;
+    // is_ok_from_a_.data = static_cast<bool>(is_ok_from_a);
+    // is_ok_pub.publish(is_ok_from_a_);
 
     ros::spinOnce();
     rate.sleep();

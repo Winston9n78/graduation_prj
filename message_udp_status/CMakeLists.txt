@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(message_udp)
+project(message_udp_status)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -155,10 +155,16 @@ include_directories(
 ## Install ##
 #############
 
-add_executable(message_udp src/message_udp.cpp)
-target_link_libraries(message_udp ${catkin_LIBRARIES})
-add_dependencies(message_udp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(message_udp otter_control_generate_messages_cpp)
+add_executable(message_udp_status src/message_udp_status.cpp)
+target_link_libraries(message_udp_status ${catkin_LIBRARIES})
+add_dependencies(message_udp_status ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(message_udp_status otter_control_generate_messages_cpp)
+
+# add_executable(message_udp_status src/message_udp_status.cpp)
+# target_link_libraries(message_udp_status ${catkin_LIBRARIES})
+# add_dependencies(message_udp_status ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(message_udp_status otter_control_generate_messages_cpp)
+
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 

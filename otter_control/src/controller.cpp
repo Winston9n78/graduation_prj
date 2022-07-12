@@ -202,8 +202,8 @@ OtterController::OtterController() : T(3, 2)
     // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
     std::cout << "x: " <<  std::fixed << std::setprecision(2) << x_error_connect << std::endl;
-    std::cout << "y: " <<  std::fixed << std::setprecision(2) << y_error_connect << std::endl;
-    std::cout << "y: " <<  std::fixed << std::setprecision(2) << orientation_error << std::endl;
+    std::cout << "y: " <<  std::fixed << std::setprecision(2) << kp_con_x << std::endl;
+    std::cout << "y: " <<  std::fixed << std::setprecision(2) << kd_con_x << std::endl;
     //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;

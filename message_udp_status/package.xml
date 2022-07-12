@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>message_udp</name>
+  <name>message_udp_status</name>
   <version>0.0.0</version>
-  <description>The message_udp package</description>
+  <description>The message_udp_status package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
