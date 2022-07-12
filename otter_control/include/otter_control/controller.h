@@ -26,6 +26,8 @@
 
 #include <tf/transform_listener.h>
 
+#include <nav_msgs/Odometry.h>
+
 #include <queue>
 
 class OtterController
@@ -48,6 +50,8 @@ private:
   void voltage_Callback(const std_msgs::Float32& msg);
   void tagframe0Callback(const nlink_parser::LinktrackTagframe0 &msg);
   void thrust_ouput_limit(double& output_value);
+
+  void t265_odom_Callback(const nav_msgs::Odometry &msg);
 
   void keyboard_Callback(const std_msgs::Int32MultiArray& msg);
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
@@ -128,7 +132,9 @@ private:
   double camera_pitch = 0; //作为yaw
   double connect_pwm_y = 0, connect_pwm_x = 0, connect_pwm_orientation = 0,connect_pwm_fi = 0;
 
-  double point_now_x, point_now_y, point_now_z;
+  double point_now_x = 0, point_now_y = 0, point_now_z = 0;
+  double point_now_x_t265 = 0, point_now_y_t265 = 0, point_now_z_t265 = 0;
+
   double point_set_x = 1.5, point_set_y = 1.5, point_set_z;
   double stick_to_point_pwm_x = 0, stick_to_point_pwm_y = 0, stick_to_point_pwm_o = 0;
 
@@ -144,7 +150,7 @@ private:
 
   double y_error_connect = 0, x_error_connect = 0, orientation_error = 0;
   double d_y = 0,d_x = 0,d_o = 0,d_fi = 0;
-  double x_error_stick, y_error_stick;
+  double x_error_stick = 0, y_error_stick = 0;
 
   double target_z = 0.5;
 

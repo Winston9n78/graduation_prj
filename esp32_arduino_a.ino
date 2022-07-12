@@ -31,10 +31,10 @@ int value2 = 1500;//右
 int value3 = 1500;//头
 int value4 = 1500;//尾
 
-int lock_control[4] = {0,0,0,0}; //控制信号输出
-#define a_up 25
+int lock_control[4] = {1,1,1,1}; //控制信号输出
+#define a_up 25 //伸出去
 #define a_down 26
-#define b_up 27
+#define b_up 27 //伸出去
 #define b_down 14
 
 float analog_value = 0;
@@ -43,16 +43,12 @@ float analog_value = 0;
 
 //速度
 void messageCb1( const std_msgs::Float32& toggle_msg){
-
   value1 = int(toggle_msg.data);
-
 }
 
 //方向
 void messageCb2( const std_msgs::Float32& toggle_msg){
-
   value2 = int(toggle_msg.data);
- 
 }
 
 void messageCb3( const std_msgs::Float32& toggle_msg){
@@ -175,8 +171,8 @@ void loop()
     int c0 = (channels[3]+500);
     int d0 = 3000-(channels[3]+500);
 
-    int left = a0 - a1;
-    int right = b0 - b1;
+    int left = 3000 - (a0 + a1);
+    int right = 3000 - (b0 + b1);
 
     if(left >= 1700) left = 1700;
     if(left <= 1300) left = 1300;

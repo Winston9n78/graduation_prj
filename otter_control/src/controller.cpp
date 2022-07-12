@@ -22,7 +22,7 @@
 
 #include <queue>
 
-#include <nav_msgs/Odometry.h>
+
 
 OtterController::OtterController() : T(3, 2)
 {
@@ -53,6 +53,9 @@ OtterController::OtterController() : T(3, 2)
 
   ros::Subscriber sub_nlink =
       nh.subscribe("/nlink_linktrack_tagframe0", 1000, &OtterController::tagframe0Callback, this);//this的作用是什么
+
+  ros::Subscriber sub_odom_t265 = 
+      nh.subscribe("/camera/odom/sample", 10, &OtterController::t265_odom_Callback, this);
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
   tf::TransformListener listener;
@@ -105,7 +108,7 @@ OtterController::OtterController() : T(3, 2)
 
     //  std::cout << "角度输出：" << tauYaw << std::endl;
 
-    // stick_to_point();
+    stick_to_point();
 
 #if 0 /*对接测试*/
 
@@ -128,15 +131,15 @@ OtterController::OtterController() : T(3, 2)
 
 #else /* 对准测试 */
 
-   latching_algorithm();
+  // latching_algorithm();
 
 #endif
 
-    double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_y - stick_to_point_pwm_o;
-    double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_y - stick_to_point_pwm_o;
+    double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
+    double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_x - stick_to_point_pwm_o;
 
-    double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_x;
-    double tail_output = output_dead + connect_pwm_y - stick_to_point_pwm_x;
+    double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_y;
+    double tail_output = output_dead + connect_pwm_y - stick_to_point_pwm_y;
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
@@ -201,9 +204,9 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "x: " <<  std::fixed << std::setprecision(2) << x_error_connect << std::endl;
-    std::cout << "y: " <<  std::fixed << std::setprecision(2) << kp_con_x << std::endl;
-    std::cout << "y: " <<  std::fixed << std::setprecision(2) << kd_con_x << std::endl;
+    std::cout << "x: " << point_now_x_t265 << std::endl;
+    std::cout << "y: " << point_now_y_t265 << std::endl;
+    std::cout << "y: " << stick_to_point_pwm_x << std::endl;
     //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
@@ -213,7 +216,6 @@ OtterController::OtterController() : T(3, 2)
 }
 
 void OtterController::setPoint(const geometry_msgs::PoseStamped& point) { 
-
   // m_path = path; 
   Point_set = point;
   // std::cout << "订阅的目标点坐标(" << Point_goal.pose.position.x << ", " << Point_goal.pose.position.y << ")" << std::endl;
@@ -454,6 +456,11 @@ void OtterController::keyboard_Callback(const std_msgs::Int32MultiArray& msg){
 
 }
 
+void OtterController::t265_odom_Callback(const nav_msgs::Odometry &msg){
+  point_now_x_t265 = msg.pose.pose.position.x;
+  point_now_y_t265 = msg.pose.pose.position.y;
+}
+
 /*
 return 0: 未开始holding或者正在holding
 return 1: holding过程中检测到了二维码则立马进入对接状态
@@ -462,12 +469,14 @@ int OtterController::stick_to_point(){
 
   static double x_error_last, y_error_last, d_hold_x, d_hold_y;
   static bool latch_flag;
-  static double angle_hold;
+  static double angle_hold, position_hold_x, position_hold_y;
   static int count, done;
   double radius = 0.5; // holding半径
   //设定点应该自动计算
-  x_error_stick = point_now_x - (1.3);//Point_set.pose.position.x;
-  y_error_stick = point_now_y - (2.5);//Point_set.pose.position.y;
+  // x_error_stick = point_now_x - (1.3);//Point_set.pose.position.x;
+  // y_error_stick = point_now_y - (2.5);//Point_set.pose.position.y;
+  x_error_stick = point_now_x_t265 - position_hold_x;
+  y_error_stick = point_now_y_t265 - position_hold_y;
 
   d_hold_x = x_error_stick - x_error_last;
   d_hold_y = y_error_stick - y_error_last;
@@ -475,8 +484,8 @@ int OtterController::stick_to_point(){
   x_error_last = x_error_stick;
   y_error_last = y_error_stick;
   
-  stick_to_point_pwm_x = 0;//(kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
-  stick_to_point_pwm_y = 0;//(kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
+  stick_to_point_pwm_x = -(kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
+  stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   stick_to_point_pwm_o =  - (kp_stick_o * (angle_z - angle_hold) + kd_stick_o * angular_velocity_z);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
@@ -499,6 +508,8 @@ int OtterController::stick_to_point(){
   if(!Arrive_master && count > 100){ //dist < radius 
     Arrive_master = true;
     angle_hold = angle_z;
+    position_hold_x = point_now_x_t265;
+    position_hold_y = point_now_y_t265;
     done = 1;
     count = 0;
   }
