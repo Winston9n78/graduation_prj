@@ -52,6 +52,7 @@ private:
   void thrust_ouput_limit(double& output_value);
 
   void t265_odom_Callback(const nav_msgs::Odometry &msg);
+  void dvl_a50_Callback(const std_msgs::Float64MultiArray& msg);
 
   void keyboard_Callback(const std_msgs::Int32MultiArray& msg);
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
@@ -134,6 +135,7 @@ private:
 
   double point_now_x = 0, point_now_y = 0, point_now_z = 0;
   double point_now_x_t265 = 0, point_now_y_t265 = 0, point_now_z_t265 = 0;
+  double point_now_x_dvl_a50 = 0, point_now_y_dvl_a50 = 0, v_dvl_a50_x = 0, v_dvl_a50_y = 0;
 
   double point_set_x = 1.5, point_set_y = 1.5, point_set_z;
   double stick_to_point_pwm_x = 0, stick_to_point_pwm_y = 0, stick_to_point_pwm_o = 0;

@@ -56,6 +56,9 @@ OtterController::OtterController() : T(3, 2)
 
   ros::Subscriber sub_odom_t265 = 
       nh.subscribe("/camera/odom/sample", 10, &OtterController::t265_odom_Callback, this);
+
+  ros::Subscriber sub_dvl_a50 = 
+      nh.subscribe("dvl_a50", 10, &OtterController::dvl_a50_Callback, this);
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
   tf::TransformListener listener;
@@ -204,8 +207,8 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "x: " << point_now_x_t265 << std::endl;
-    std::cout << "y: " << point_now_y_t265 << std::endl;
+    std::cout << "x: " << point_now_x_dvl_a50 << std::endl;
+    std::cout << "y: " << point_now_y_dvl_a50 << std::endl;
     std::cout << "y: " << stick_to_point_pwm_x << std::endl;
     //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
@@ -461,6 +464,21 @@ void OtterController::t265_odom_Callback(const nav_msgs::Odometry &msg){
   point_now_y_t265 = msg.pose.pose.position.y;
 }
 
+void OtterController::dvl_a50_Callback(const std_msgs::Float64MultiArray& msg){
+
+  point_now_x_dvl_a50 = msg.data[0];
+  point_now_y_dvl_a50 = msg.data[1];
+
+  point_now_x_dvl_a50 = int(1000*point_now_x_dvl_a50);
+  point_now_y_dvl_a50 = int(1000*point_now_y_dvl_a50);
+  point_now_x_dvl_a50 = point_now_x_dvl_a50 / 1000;
+  point_now_y_dvl_a50 = point_now_y_dvl_a50 / 1000;
+
+  v_dvl_a50_x = msg.data[2];
+  v_dvl_a50_y = msg.data[3];
+
+}
+
 /*
 return 0: 未开始holding或者正在holding
 return 1: holding过程中检测到了二维码则立马进入对接状态
@@ -475,8 +493,8 @@ int OtterController::stick_to_point(){
   //设定点应该自动计算
   // x_error_stick = point_now_x - (1.3);//Point_set.pose.position.x;
   // y_error_stick = point_now_y - (2.5);//Point_set.pose.position.y;
-  x_error_stick = point_now_x_t265 - position_hold_x;
-  y_error_stick = point_now_y_t265 - position_hold_y;
+  x_error_stick = point_now_x_dvl_a50 - position_hold_x;
+  y_error_stick = point_now_y_dvl_a50 - position_hold_y;
 
   d_hold_x = x_error_stick - x_error_last;
   d_hold_y = y_error_stick - y_error_last;
@@ -508,8 +526,8 @@ int OtterController::stick_to_point(){
   if(!Arrive_master && count > 100){ //dist < radius 
     Arrive_master = true;
     angle_hold = angle_z;
-    position_hold_x = point_now_x_t265;
-    position_hold_y = point_now_y_t265;
+    position_hold_x = point_now_x_dvl_a50;
+    position_hold_y = point_now_y_dvl_a50;
     done = 1;
     count = 0;
   }

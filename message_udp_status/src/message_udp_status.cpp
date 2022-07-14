@@ -121,7 +121,7 @@ int main(int argc, char** argv)
     // printf("server wait:\n");
     
     // if(!flag){
-    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), MSG_DONTWAIT, (struct sockaddr *)&addr_client, (socklen_t *)&len);
+    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
     addr_client_ = addr_client;
       // flag = 1;
     // }
