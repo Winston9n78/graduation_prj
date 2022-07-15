@@ -163,6 +163,8 @@ private:
   bool is_ok = false, is_lock_ok = false;
   int start = 0, count = 0;
 
+  bool reverse_flag = false;
+
   tf::StampedTransform transform; // my_bundle里的坐标变换关系
 
   geometry_msgs::PoseStamped Point_set;

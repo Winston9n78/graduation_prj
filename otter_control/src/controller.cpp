@@ -133,9 +133,7 @@ OtterController::OtterController() : T(3, 2)
     }
 
 #else /* 对准测试 */
-
   // latching_algorithm();
-
 #endif
 
     double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
@@ -143,6 +141,14 @@ OtterController::OtterController() : T(3, 2)
 
     double head_output = output_dead - connect_pwm_y + stick_to_point_pwm_y;
     double tail_output = output_dead + connect_pwm_y - stick_to_point_pwm_y;
+
+    if(reverse_flag){
+      left_output = output_dead - tauSurge - tauYaw  - connect_pwm_orientation - connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
+      right_output = output_dead + tauSurge - tauYaw - connect_pwm_orientation + connect_pwm_x + stick_to_point_pwm_x - stick_to_point_pwm_o;
+      //其他需要进行修正的位置是tag对调一下，也就是朝向
+      head_output = output_dead + connect_pwm_y + stick_to_point_pwm_y;
+      tail_output = output_dead - connect_pwm_y - stick_to_point_pwm_y;
+    }
 
     thrust_ouput_limit(left_output);
     thrust_ouput_limit(right_output);
@@ -497,7 +503,7 @@ int OtterController::stick_to_point(){
   y_error_stick = point_now_y_dvl_a50 - position_hold_y;
   angle_error_stick = angle_z - angle_hold;
 
-  /*角度偏差映射，防止小误差大转动*/
+  /*角度偏差映射，防止临界值小误差大转动*/
   if(angle_error_stick > 180 && angle_error_stick < 360) angle_error_stick -= 360;
   if(angle_error_stick < -180 && angle_error_stick > -360) angle_error_stick += 360;
 
@@ -513,8 +519,8 @@ int OtterController::stick_to_point(){
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 
-  std::cout << angle_z << std::endl;
-  std::cout << angle_hold << std::endl;
+  std::cout << angle_error_stick << std::endl;
+  // std::cout << angle_hold << std::endl;
   // std::cout << x_error_stick << std::endl;
   // std::cout << y_error_stick << std::endl;
   // std::cout << kp_stick_x << std::endl;
@@ -624,6 +630,11 @@ void OtterController::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &
   // 0在前面
   double delta_y = tag0_y - tag1_y;
   double delta_x = tag0_x - tag1_x;
+
+  if(reverse_flag){
+    delta_y = - delta_y;
+    delta_x = - delta_x;
+  }
 
   point_now_x = (tag0_x + tag1_x) / 2;
   point_now_y = (tag0_y + tag1_y) / 2;
