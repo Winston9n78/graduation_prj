@@ -117,7 +117,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -155,7 +155,18 @@ include_directories(
 ## Install ##
 #############
 
-add_executable(message_udp_status src/message_udp_status.cpp)
+add_executable(message_udp_status 
+  include/message_udp_status/message_udp_status.h
+  src/message_udp_status.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp
+  src/handle_of_8001.cpp)
 target_link_libraries(message_udp_status ${catkin_LIBRARIES})
 add_dependencies(message_udp_status ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(message_udp_status otter_control_generate_messages_cpp)

@@ -1,48 +1,5 @@
 #include "stof/stof.h"
 
-
-// void cb(parameter_set::drConfig& config, uint32_t level){
-//     // ROS_INFO("parameter_show:%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%d,%s",
-//     //     config.velocity_set,
-//     //     config.V_P,
-//     //     config.V_I,
-//     //     config.V_D,
-//     //     config.T_P,
-//     //     config.T_I,
-//     //     config.T_D,
-//     //     config.Connect_P,
-//     //     config.Connect_I,
-//     //     config.Connect_D,
-//     //     config.Connect_P_orien,
-//     //     config.Connect_I_orien,
-//     //     config.Stick_P,
-//     //     config.Stick_I,
-//     //     config.Stick_D,
-//     //     config.list_param,
-//     //     config.path_point.c_str()
-//     // );
-    
-//     // velocity_set = config.velocity_set;
-//     // V_P = config.V_P;
-//     // V_I = config.V_I;
-//     // V_D = config.V_D;
-//     // T_P = config.T_P;
-//     // T_I = config.T_I;
-//     // T_D = config.T_D;
-//     // Connect_P = config.Connect_P;
-//     // Connect_I = config.Connect_I;
-//     // Connect_D = config.Connect_D;
-//     // Connect_P_orien = config.Connect_P_orien;
-//     // Connect_I_orien = config.Connect_I_orien;
-//     // Stick_P = config.Stick_P;
-//     // Stick_I = config.Stick_I;
-//     // Stick_D = config.Stick_D;
-//     // list_param = config.list_param;
-    
-//     // str = config.path_point.c_str();
-//     // GetFloat(str);
-
-// }
  
 float SVF(char array[])
 {
@@ -110,18 +67,3 @@ double GetFloat(string str, double (&path)[point_number])
 
 } 
 
-// int main(int argc, char *argv[])
-// {
-
-//     ros::init(argc,argv,"dr");
-
-//     dynamic_reconfigure::Server<parameter_set::drConfig> server;
-
-//     dynamic_reconfigure::Server<parameter_set::drConfig>::CallbackType cbType;
-//     cbType = boost::bind(&cb,_1,_2);
-
-//     server.setCallback(cbType);
-
-//     ros::spin();
-//     return 0;
-// }

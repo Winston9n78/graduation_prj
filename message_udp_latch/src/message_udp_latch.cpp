@@ -18,7 +18,8 @@
 #include "std_msgs/Bool.h"
 #include <otter_control/usv_status.h>
 
-std::stringstream ss;
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 #define SERV_PORT  8000
 
@@ -43,15 +44,17 @@ struct sockaddr_in addr_serv;
 int len;
 int recv_num;
 int send_num;
-char send_buf[50] = "";
-char recv_buf[20];
+char send_buf[50] = "is_ok_from_b:0";
+char recv_buf[50] = "is_ok_from_a:0";
 struct sockaddr_in addr_client;
 struct sockaddr_in addr_client_;
 int flag = 0;
 std::string lock_status = "is_ok_from_b:";
 
-void recieve_msg(){
-    int recv_num;
+void recieve_thread_function(){
+
+  int recv_num;
+  while(1){
     recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
     if(recv_num < 0)
     {
@@ -59,19 +62,37 @@ void recieve_msg(){
       exit(1);
     }
     recv_buf[recv_num] = '\0';
-    printf("server receive %d bytes: %s\n", recv_num, recv_buf);
+    std::cout<<"server receive " << recv_num << " bytes: " << recv_buf;
+
+    /*提取数字给is_ok_from_a*/
+    if(recv_num > 0){
+
+      std::string str(recv_buf);
+      std::vector<std::string> vStr;
+      boost::split(vStr, str, boost::is_any_of( ",:" ), boost::token_compress_on);
+      is_ok_from_a = std::stod(vStr[1]);
+      // std::cout << is_ok_from_a << std::endl;
+
+    }
     addr_client_ = addr_client;
+
     flag = 1;
+  }
 }
 
-void send_msg(){
-  if(flag){
-    send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client_, len);
-    if(send_num < 0)
-    {
-      perror("sendto error:");
-      exit(1);
+void send_thread_function(){
+
+  while(1){
+    if(flag){
+      send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client_, len);
+      if(send_num < 0)
+      {
+        perror("sendto error:");
+        exit(1);
+      }
     }
+    sleep(1);
+    
   }
 }
 
@@ -103,6 +124,10 @@ int main(int argc, char** argv)
   addr_serv.sin_addr.s_addr = htonl(INADDR_ANY);
   addr_serv.sin_port = htons(SERV_PORT);
   
+  // addr_client.sin_family = AF_INET;
+  // addr_client.sin_port = htons(8000);    // 
+  // inet_pton(AF_INET, "192.168.1.102", &addr_client.sin_addr.s_addr);
+  
   //addr_serv.sin_family = AF_INET;  　　　　　　　　　　　 //使用IPV4地址
   //addr_serv.sin_addr.s_addr = htonl(INADDR_ANY);  //自动获取IP地址      
   //addr_serv.sin_port = htons(SERV_PORT);  　　　　　　　 //端口
@@ -117,17 +142,8 @@ int main(int argc, char** argv)
     exit(1);
   }
 
-  // int recv_num;
-  // int send_num;
-  // char send_buf[50] = "";
-  // char recv_buf[20];
-  // struct sockaddr_in addr_client;
-  // struct sockaddr_in addr_client_;
-  // int flag = 0;
-
-  // addr_client.sin_family = AF_INET;
-  // addr_client.sin_port = htons(8000);    // 
-  // inet_pton(AF_INET, "192.168.1.102", &addr_client.sin_addr.s_addr);
+  std::thread recv_msg(recieve_thread_function);
+  std::thread send_msg(send_thread_function);
 
   double frequency = 10.0;
   ros::Rate rate(frequency);
@@ -143,63 +159,6 @@ int main(int argc, char** argv)
     std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
     lock_status += asString;
 
-    /****把姿态以一定格式发送出去***
-    ss <<  usv_x;
-    std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
-    usv_status += asString;
-
-    ss.str("");
-    usv_status += ",y:";
-    ss << usv_y;
-    asString = ss.str();
-    usv_status += asString;
-
-    ss.str("");
-    usv_status += ",orien:";
-    ss << usv_orien;
-    asString = ss.str();
-    usv_status += asString;
-    ***把姿态以一定格式发送出去****/
-
-    // std::cout << lock_status << std::endl;
-
-    // printf("server wait:\n");
-    
-    // if(!flag){
-    // recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
-    
-    // addr_client_ = addr_client;
-      // flag = 1;
-    // }
-    // if(recv_num < 0)
-    // {
-    //   perror("recvfrom error:");
-    //   exit(1);
-    // }
-
-    // send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client, len);
-
-    // if(send_num < 0)
-    // {
-    //   perror("sendto error:");
-    //   exit(1);
-    // }
-
-    
-
-
-    // recv_buf[recv_num] = '\0';
-    // printf("server receive %d bytes: %s\n", recv_num, recv_buf);
-
-    /*提取数字给is_ok_from_a*/
-    // const char *d = ":";
-    // char *p;
-    // p = std::strtok(recv_buf, d);
-    // p = std::strtok(NULL, d);
-    // is_ok_from_a = atoi(p);
-
-    std::thread recv_msg(recieve_msg);
-    std::thread se_msg(send_msg);
 
     std_msgs::Bool is_ok_from_a_;
     is_ok_from_a_.data = static_cast<bool>(is_ok_from_a);
