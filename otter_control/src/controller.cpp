@@ -495,6 +495,11 @@ int OtterController::stick_to_point(){
   // y_error_stick = point_now_y - (2.5);//Point_set.pose.position.y;
   x_error_stick = point_now_x_dvl_a50 - position_hold_x;
   y_error_stick = point_now_y_dvl_a50 - position_hold_y;
+  angle_error_stick = angle_z - angle_hold;
+
+  /*角度偏差映射，防止小误差大转动*/
+  if(angle_error_stick > 180 && angle_error_stick < 360) angle_error_stick -= 360;
+  if(angle_error_stick < -180 && angle_error_stick > -360) angle_error_stick += 360;
 
   d_hold_x = x_error_stick - x_error_last;
   d_hold_y = y_error_stick - y_error_last;
@@ -504,7 +509,7 @@ int OtterController::stick_to_point(){
   
   stick_to_point_pwm_x = -(kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
   stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
-  stick_to_point_pwm_o =  - (kp_stick_o * (angle_z - angle_hold) + kd_stick_o * angular_velocity_z);
+  stick_to_point_pwm_o =  - (kp_stick_o * angle_error_stick + kd_stick_o * angular_velocity_z);
 
   double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
 

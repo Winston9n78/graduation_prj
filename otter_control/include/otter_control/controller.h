@@ -152,7 +152,7 @@ private:
 
   double y_error_connect = 0, x_error_connect = 0, orientation_error = 0;
   double d_y = 0,d_x = 0,d_o = 0,d_fi = 0;
-  double x_error_stick = 0, y_error_stick = 0;
+  double x_error_stick = 0, y_error_stick = 0, angle_error_stick = 0;
 
   double target_z = 0.5;
 

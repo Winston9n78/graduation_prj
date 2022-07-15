@@ -7,8 +7,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <arpa/inet.h>
+
 #include <sstream>
 #include <string>
+#include <thread>
 
 #include "ros/ros.h"
 #include "std_msgs/Float32.h"
@@ -35,6 +38,43 @@ void to_lock_callback(const std_msgs::Bool msg){
     is_ok = msg.data;
 }
 
+int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+struct sockaddr_in addr_serv;
+int len;
+int recv_num;
+int send_num;
+char send_buf[50] = "";
+char recv_buf[20];
+struct sockaddr_in addr_client;
+struct sockaddr_in addr_client_;
+int flag = 0;
+std::string lock_status = "is_ok_from_b:";
+
+void recieve_msg(){
+    int recv_num;
+    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
+    if(recv_num < 0)
+    {
+      perror("recvfrom error:");
+      exit(1);
+    }
+    recv_buf[recv_num] = '\0';
+    printf("server receive %d bytes: %s\n", recv_num, recv_buf);
+    addr_client_ = addr_client;
+    flag = 1;
+}
+
+void send_msg(){
+  if(flag){
+    send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client_, len);
+    if(send_num < 0)
+    {
+      perror("sendto error:");
+      exit(1);
+    }
+  }
+}
+
 int main(int argc, char** argv)
 {
 
@@ -48,7 +88,7 @@ int main(int argc, char** argv)
   ros::Subscriber to_lock_sub = nh.subscribe("is_ok_from_b", 1, &to_lock_callback);
   is_ok_pub = nh.advertise<std_msgs::Bool>("is_ok_from_a", 1);
   /* sock_fd --- socket文件描述符 创建udp套接字*/
-  int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+  // int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
   if(sock_fd < 0)
   {
     perror("socket");
@@ -56,8 +96,8 @@ int main(int argc, char** argv)
   }
 
   /* 将套接字和IP、端口绑定 */
-  struct sockaddr_in addr_serv;
-  int len;
+  // struct sockaddr_in addr_serv;
+  // int len;
   memset(&addr_serv, 0, sizeof(struct sockaddr_in));  //每个字节都用0填充
   addr_serv.sin_family = AF_INET;
   addr_serv.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -77,13 +117,17 @@ int main(int argc, char** argv)
     exit(1);
   }
 
-  int recv_num;
-  int send_num;
-  char send_buf[50] = "";
-  char recv_buf[20];
-  struct sockaddr_in addr_client;
-  struct sockaddr_in addr_client_;
-  int flag = 0;
+  // int recv_num;
+  // int send_num;
+  // char send_buf[50] = "";
+  // char recv_buf[20];
+  // struct sockaddr_in addr_client;
+  // struct sockaddr_in addr_client_;
+  // int flag = 0;
+
+  // addr_client.sin_family = AF_INET;
+  // addr_client.sin_port = htons(8000);    // 
+  // inet_pton(AF_INET, "192.168.1.102", &addr_client.sin_addr.s_addr);
 
   double frequency = 10.0;
   ros::Rate rate(frequency);
@@ -91,7 +135,8 @@ int main(int argc, char** argv)
   while(nh.ok())
   {
     std::stringstream ss;
-    std::string lock_status = "is_ok_from_b:";
+    // std::string 
+    lock_status = "is_ok_from_b:";
 
     /*发送动锁信号*/
     ss <<  is_ok;
@@ -121,34 +166,40 @@ int main(int argc, char** argv)
     // printf("server wait:\n");
     
     // if(!flag){
-    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
-    addr_client_ = addr_client;
+    // recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
+    
+    // addr_client_ = addr_client;
       // flag = 1;
     // }
-    
-    if(recv_num < 0)
-    {
-      perror("recvfrom error:");
-      exit(1);
-    }
+    // if(recv_num < 0)
+    // {
+    //   perror("recvfrom error:");
+    //   exit(1);
+    // }
 
-    recv_buf[recv_num] = '\0';
-    printf("server receive %d bytes: %s\n", recv_num, recv_buf);
+    // send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client, len);
+
+    // if(send_num < 0)
+    // {
+    //   perror("sendto error:");
+    //   exit(1);
+    // }
+
+    
+
+
+    // recv_buf[recv_num] = '\0';
+    // printf("server receive %d bytes: %s\n", recv_num, recv_buf);
 
     /*提取数字给is_ok_from_a*/
-      const char *d = ":";
-      char *p;
-      p = std::strtok(recv_buf, d);
-      p = std::strtok(NULL, d);
-      is_ok_from_a = atoi(p);
+    // const char *d = ":";
+    // char *p;
+    // p = std::strtok(recv_buf, d);
+    // p = std::strtok(NULL, d);
+    // is_ok_from_a = atoi(p);
 
-    send_num = sendto(sock_fd, lock_status.c_str(), lock_status.size(), 0, (struct sockaddr *)&addr_client_, len);
-
-    if(send_num < 0)
-    {
-      perror("sendto error:");
-      exit(1);
-    }
+    std::thread recv_msg(recieve_msg);
+    std::thread se_msg(send_msg);
 
     std_msgs::Bool is_ok_from_a_;
     is_ok_from_a_.data = static_cast<bool>(is_ok_from_a);

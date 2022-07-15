@@ -35,7 +35,7 @@ void to_lock_callback(const std_msgs::Bool msg){
     is_ok = msg.data;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
 
   ros::init(argc, argv, "messsage_udp_status_node");
@@ -83,6 +83,11 @@ int main(int argc, char** argv)
   char recv_buf[20];
   struct sockaddr_in addr_client;
   struct sockaddr_in addr_client_;
+  
+  addr_client.sin_family = AF_INET;
+  addr_client.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr_client.sin_port = htons(atoi(argv[1]));
+
   int flag = 0;
 
   double frequency = 10.0;
@@ -98,7 +103,7 @@ int main(int argc, char** argv)
     // std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
     // lock_status += asString;
 
-    /****把姿态以一定格式发送出去***/
+    /****把姿态以一定格式发送出去****/
     ss <<  usv_x;
     std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
     usv_status += asString;
@@ -121,28 +126,29 @@ int main(int argc, char** argv)
     // printf("server wait:\n");
     
     // if(!flag){
-    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
-    addr_client_ = addr_client;
+    recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), MSG_PEEK | MSG_DONTWAIT, (struct sockaddr *)&addr_client, (socklen_t *)&len);
+    // addr_client_ = addr_client;
       // flag = 1;
     // }
-    
-    if(recv_num < 0)
+
+    if(recv_num <= 0)
     {
-      perror("recvfrom error:");
-      exit(1);
+      perror("recvfrom nothing:");
+      break;
+      //exit(1);
     }
 
     recv_buf[recv_num] = '\0';
     printf("server receive %d bytes: %s\n", recv_num, recv_buf);
 
     /*提取数字给is_ok_from_a*/
-    const char *d = ":";
-    char *p;
-    p = std::strtok(recv_buf, d);
+    // const char *d = ":";
+    // char *p;
+    // p = std::strtok(recv_buf, d);
     // p = std::strtok(NULL, d);
     // is_ok_from_a = atoi(p);
 
-    send_num = sendto(sock_fd, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client_, len);
+    send_num = sendto(sock_fd, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client, len);
 
     if(send_num < 0)
     {
