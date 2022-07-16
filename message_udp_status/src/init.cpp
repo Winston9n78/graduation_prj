@@ -1,10 +1,17 @@
 #include "message_udp_status/message_udp_status.h"
 
-void addr_init(struct sockaddr_in &sockaddr, int port){
+void serv_addr_init(struct sockaddr_in &sockaddr, int port){
   memset(&sockaddr, 0, sizeof(struct sockaddr_in));  //每个字节都用0填充
   sockaddr.sin_family = AF_INET;
   sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
   sockaddr.sin_port = htons(port);
+}
+
+void client_addr_init(struct sockaddr_in &sockaddr, int port){
+  memset(&sockaddr, 0, sizeof(struct sockaddr_in));  //每个字节都用0填充
+  sockaddr.sin_family = AF_INET;
+  sockaddr.sin_port = htons(port);
+  inet_pton(AF_INET, "192.168.1.102", &sockaddr.sin_addr.s_addr);
 }
 
 void sock_fd_init(){
@@ -19,16 +26,28 @@ void sock_fd_init(){
     sock_fd_8009 = socket(AF_INET, SOCK_DGRAM, 0);
 }
 
-void addr_init_all(){
-    addr_init(addr_serv_8001, SERV_PORT_8001);
-    addr_init(addr_serv_8002, SERV_PORT_8002);
-    addr_init(addr_serv_8003, SERV_PORT_8003);
-    addr_init(addr_serv_8004, SERV_PORT_8004);
-    addr_init(addr_serv_8005, SERV_PORT_8005);
-    addr_init(addr_serv_8006, SERV_PORT_8006);
-    addr_init(addr_serv_8007, SERV_PORT_8007);
-    addr_init(addr_serv_8008, SERV_PORT_8008);
-    addr_init(addr_serv_8009, SERV_PORT_8009);
+void serv_addr_init_all(){
+    serv_addr_init(addr_serv_8001, SERV_PORT_8001);
+    serv_addr_init(addr_serv_8002, SERV_PORT_8002);
+    serv_addr_init(addr_serv_8003, SERV_PORT_8003);
+    serv_addr_init(addr_serv_8004, SERV_PORT_8004);
+    serv_addr_init(addr_serv_8005, SERV_PORT_8005);
+    serv_addr_init(addr_serv_8006, SERV_PORT_8006);
+    serv_addr_init(addr_serv_8007, SERV_PORT_8007);
+    serv_addr_init(addr_serv_8008, SERV_PORT_8008);
+    serv_addr_init(addr_serv_8009, SERV_PORT_8009);
+}
+
+void client_addr_init_all(){
+    client_addr_init(addr_client_8001, SERV_PORT_8001);
+    client_addr_init(addr_client_8002, SERV_PORT_8002);
+    client_addr_init(addr_client_8003, SERV_PORT_8003);
+    client_addr_init(addr_client_8004, SERV_PORT_8004);
+    client_addr_init(addr_client_8005, SERV_PORT_8005);
+    client_addr_init(addr_client_8006, SERV_PORT_8006);
+    client_addr_init(addr_client_8007, SERV_PORT_8007);
+    client_addr_init(addr_client_8008, SERV_PORT_8008);
+    client_addr_init(addr_client_8009, SERV_PORT_8009);
 }
 
 bool bind_check(){

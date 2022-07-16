@@ -10,8 +10,6 @@ int send_num_8009;
 char send_buf_8009[50] = "x:0,y:0,angle:0";
 char recv_buf_8009[50] = "x:0,y:0,angle:0";
 
-int flag_8009 = 1;
-
 void recieve_thread_function_8009(){
   int recv_num;
   while(1){
@@ -29,26 +27,20 @@ void recieve_thread_function_8009(){
     {
 
     }
-
-    addr_client_8009_ = addr_client_8009;
-
-    flag_8009 = 1;
   }
 }
 
 void send_thread_function_8009(){
     while(1){
 
-        if(flag_8009){
-            send_num_8009 = sendto(sock_fd_8009, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client_8009_, len);
-            if(send_num_8009 < 0)
-            {
-                perror("sendto error:");
-                exit(1);
-            }
+        send_num_8009 = sendto(sock_fd_8009, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client_8009, len);
+        if(send_num_8009 < 0)
+        {
+            perror("sendto error:");
+            exit(1);
         }
 
-    sleep(1);
+        sleep(1);
     
   }
 }

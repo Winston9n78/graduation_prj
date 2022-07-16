@@ -6,12 +6,20 @@ int is_ok_from_a = 0; // 将接收到的另一艘船的解码的变量
 
 int len;
 
+ros::Publisher path_pub;
+
 std::string usv_status;
+
+std_msgs::Float32MultiArray map_path;
 
 void usv_status_callback(const otter_control::usv_status msg){
     usv_x = msg.position_z;
     usv_y = msg.position_x;
     usv_orien = msg.orientation_pitch;
+}
+
+void image_callback(const otter_control::usv_status msg){
+
 }
 
 int main(int argc, char** argv)
@@ -24,12 +32,15 @@ int main(int argc, char** argv)
   ros::Publisher is_ok_pub;
 
   ros::Subscriber status_sub = nh.subscribe("usv_status", 1, &usv_status_callback);
-
+  ros::Subscriber image_sub = nh.subscribe("/d400/color", 1, &image_callback);
+  path_pub =
+    nh.advertise<std_msgs::Float32MultiArray>("map_path", 10);
   /* sock_fd --- socket文件描述符 创建udp套接字*/
   // int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
   sock_fd_init();
-  addr_init_all();
+  serv_addr_init_all();
+  client_addr_init_all();
 
   if(sock_fd_check())
   {
@@ -54,26 +65,7 @@ int main(int argc, char** argv)
   while(nh.ok())
   {
 
-    std::stringstream ss;
-    usv_status = "x:";
 
-    /****把姿态以一定格式发送出去****/
-    ss <<  usv_x;
-    std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
-    usv_status += asString;
-
-    ss.str("");
-    usv_status += ",y:";
-    ss << usv_y;
-    asString = ss.str();
-    usv_status += asString;
-
-    ss.str("");
-    usv_status += ",orien:";
-    ss << usv_orien;
-    asString = ss.str();
-    usv_status += asString;
-    /***把姿态以一定格式发送出去****/
 
     ros::spinOnce();
     rate.sleep();

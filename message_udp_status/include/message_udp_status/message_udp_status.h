@@ -18,6 +18,7 @@
 
 #include "ros/ros.h"
 #include "std_msgs/Float32.h"
+#include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/Bool.h"
 #include <otter_control/usv_status.h>
 
@@ -75,6 +76,10 @@ extern struct sockaddr_in addr_client_8008, addr_client_8008_;
 extern struct sockaddr_in addr_serv_8009;
 extern struct sockaddr_in addr_client_8009, addr_client_8009_;
 
+extern float usv_x, usv_y, usv_orien;
+
+extern std_msgs::Float32MultiArray map_path;
+
 void send_thread_function_8001();
 void send_thread_function_8002();
 void send_thread_function_8003();
@@ -96,11 +101,12 @@ void recieve_thread_function_8008();
 void recieve_thread_function_8009();
 
 void addr_init();
-void addr_init_all();
+void serv_addr_init_all();
 void sock_fd_init();
 bool bind_check();
 bool sock_fd_check();
 void thread_on();
 void fd_close_all();
+void client_addr_init_all();
 
 #endif
