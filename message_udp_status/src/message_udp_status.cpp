@@ -1,12 +1,12 @@
 #include "message_udp_status/message_udp_status.h"
 
-
-
 float usv_x = 0.1, usv_y = 0.12345, usv_orien = 0.123456;
-
 int is_ok = 0;
-
 int is_ok_from_a = 0; // 将接收到的另一艘船的解码的变量
+
+int len;
+
+std::string usv_status;
 
 void usv_status_callback(const otter_control::usv_status msg){
     usv_x = msg.position_z;
@@ -43,6 +43,8 @@ int main(int argc, char** argv)
     perror("bind error:");
     exit(1);
   }
+
+  len = sizeof(addr_serv_8001);
 
   thread_on();
 
