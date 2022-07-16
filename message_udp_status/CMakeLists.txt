@@ -159,14 +159,15 @@ add_executable(message_udp_status
   include/message_udp_status/message_udp_status.h
   src/message_udp_status.cpp
   src/handle_of_8001.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8001.cpp)
+  src/handle_of_8002.cpp
+  src/handle_of_8003.cpp
+  src/handle_of_8004.cpp
+  src/handle_of_8005.cpp
+  src/handle_of_8006.cpp
+  src/handle_of_8007.cpp
+  src/handle_of_8008.cpp
+  src/handle_of_8009.cpp
+  src/init.cpp)
 target_link_libraries(message_udp_status ${catkin_LIBRARIES})
 add_dependencies(message_udp_status ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(message_udp_status otter_control_generate_messages_cpp)

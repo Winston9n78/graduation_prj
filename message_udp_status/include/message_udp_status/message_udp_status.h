@@ -1,5 +1,5 @@
-#ifndef MESSAGE_UDP_STATUS_H_
-#define MESSAGE_UDP_STATUS_H_
+#ifndef _MESSAGE_UDP_STATUS_H_
+#define _MESSAGE_UDP_STATUS_H_
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -34,46 +34,73 @@
 #define SERV_PORT_8008  8008
 #define SERV_PORT_8009  8009
 
-int sock_fd_8001 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8002 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8003 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8004 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8005 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8006 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8007 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8008 = socket(AF_INET, SOCK_DGRAM, 0);
-int sock_fd_8009 = socket(AF_INET, SOCK_DGRAM, 0);
+extern int sock_fd_8001;
+extern int sock_fd_8002;
+extern int sock_fd_8003;
+extern int sock_fd_8004;
+extern int sock_fd_8005;
+extern int sock_fd_8006;
+extern int sock_fd_8007;
+extern int sock_fd_8008;
+extern int sock_fd_8009;
 
-struct sockaddr_in addr_serv_8001,addr_serv_8002,addr_serv_8003,addr_serv_8004,addr_serv_8005;
-struct sockaddr_in addr_serv_8006,addr_serv_8007,addr_serv_8008,addr_serv_8009;
-struct sockaddr_in addr_client_8001, addr_client_8001_;
-struct sockaddr_in addr_client_8002, addr_client_8002_;
-struct sockaddr_in addr_client_8003, addr_client_8003_;
-struct sockaddr_in addr_client_8004, addr_client_8004_;
-struct sockaddr_in addr_client_8005, addr_client_8005_;
-struct sockaddr_in addr_client_8006, addr_client_8006_;
-struct sockaddr_in addr_client_8007, addr_client_8007_;
-struct sockaddr_in addr_client_8008, addr_client_8008_;
-struct sockaddr_in addr_client_8009, addr_client_8009_;
+extern int len;
 
-void send_thread_function_8001(){}
-void send_thread_function_8002(){}
-void send_thread_function_8003(){}
-void send_thread_function_8004(){}
-void send_thread_function_8005(){}
-void send_thread_function_8006(){}
-void send_thread_function_8007(){}
-void send_thread_function_8008(){}
-void send_thread_function_8009(){}
+extern std::string usv_status;
 
-void recieve_thread_function_8001(){}
-void recieve_thread_function_8002(){}
-void recieve_thread_function_8003(){}
-void recieve_thread_function_8004(){}
-void recieve_thread_function_8005(){}
-void recieve_thread_function_8006(){}
-void recieve_thread_function_8007(){}
-void recieve_thread_function_8008(){}
-void recieve_thread_function_8009(){}
+extern struct sockaddr_in addr_serv_8001;
+extern struct sockaddr_in addr_client_8001, addr_client_8001_;
+
+extern struct sockaddr_in addr_serv_8002;
+extern struct sockaddr_in addr_client_8002, addr_client_8002_;
+
+extern struct sockaddr_in addr_serv_8003;
+extern struct sockaddr_in addr_client_8003, addr_client_8003_;
+
+extern struct sockaddr_in addr_serv_8004;
+extern struct sockaddr_in addr_client_8004, addr_client_8004_;
+
+extern struct sockaddr_in addr_serv_8005;
+extern struct sockaddr_in addr_client_8005, addr_client_8005_;
+
+extern struct sockaddr_in addr_serv_8006;
+extern struct sockaddr_in addr_client_8006, addr_client_8006_;
+
+extern struct sockaddr_in addr_serv_8007;
+extern struct sockaddr_in addr_client_8007, addr_client_8007_;
+
+extern struct sockaddr_in addr_serv_8008;
+extern struct sockaddr_in addr_client_8008, addr_client_8008_;
+
+extern struct sockaddr_in addr_serv_8009;
+extern struct sockaddr_in addr_client_8009, addr_client_8009_;
+
+void send_thread_function_8001();
+void send_thread_function_8002();
+void send_thread_function_8003();
+void send_thread_function_8004();
+void send_thread_function_8005();
+void send_thread_function_8006();
+void send_thread_function_8007();
+void send_thread_function_8008();
+void send_thread_function_8009();
+
+void recieve_thread_function_8001();
+void recieve_thread_function_8002();
+void recieve_thread_function_8003();
+void recieve_thread_function_8004();
+void recieve_thread_function_8005();
+void recieve_thread_function_8006();
+void recieve_thread_function_8007();
+void recieve_thread_function_8008();
+void recieve_thread_function_8009();
+
+void addr_init();
+void addr_init_all();
+void sock_fd_init();
+bool bind_check();
+bool sock_fd_check();
+void thread_on();
+void fd_close_all();
 
 #endif
