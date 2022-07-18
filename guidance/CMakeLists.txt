@@ -203,10 +203,3 @@ target_link_libraries(guidance_node
   ${catkin_LIBRARIES}
 )
 
-add_executable(pose_tf_usv
-  src/pose_tf_usv.cpp
-)
-add_dependencies(pose_tf_usv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(pose_tf_usv
-  ${catkin_LIBRARIES}
-)

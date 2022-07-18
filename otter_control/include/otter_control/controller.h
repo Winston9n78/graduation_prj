@@ -7,7 +7,7 @@
 #include <std_msgs/Int32MultiArray.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/Imu.h>
-#include <usv_msgs/SpeedCourse.h>
+// #include <usv_msgs/SpeedCourse.h>
 
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
@@ -41,7 +41,7 @@ private:
   double calculateSurgeForce(double deltaTime, double u);
   double calculateYawMoment(double deltaTime, double psi, double r);
   Eigen::Vector2d thrustAllocation(Eigen::Vector3d tau_d);
-  void inputCallback(const usv_msgs::SpeedCourse& msg);
+  void inputCallback(const std_msgs::Float64MultiArray& msg);
   void speedCallback(const geometry_msgs::Vector3Stamped& msg);
   void imuCallback(const sensor_msgs::Imu& msg);
   double getYaw();

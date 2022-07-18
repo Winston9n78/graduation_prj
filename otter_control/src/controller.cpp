@@ -507,13 +507,13 @@ int OtterController::stick_to_point(){
   if(angle_error_stick > 180 && angle_error_stick < 360) angle_error_stick -= 360;
   if(angle_error_stick < -180 && angle_error_stick > -360) angle_error_stick += 360;
 
-  d_hold_x = x_error_stick - x_error_last;
-  d_hold_y = y_error_stick - y_error_last;
+  d_hold_x = v_dvl_a50_x;//x_error_stick - x_error_last;
+  d_hold_y = v_dvl_a50_y;//y_error_stick - y_error_last;
 
   x_error_last = x_error_stick;
   y_error_last = y_error_stick;
   
-  stick_to_point_pwm_x = -(kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
+  stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
   stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   stick_to_point_pwm_o =  - (kp_stick_o * angle_error_stick + kd_stick_o * angular_velocity_z);
 
@@ -704,11 +704,10 @@ void OtterController::imu_Callback(const sensor_msgs::Imu& msg){
   // std::cout << "速度_y:" << v_y <<std::endl;
   // std::cout << "位置_x:" << position_x <<std::endl;
   // std::cout << "位置_y:"<< position_y <<std::endl;
-
 }
 
 double OtterController::abnomal_detect(double now, double last){
-  return (now - last) > 0.20 ? last : now; 
+  return (now - last) > 0.20 ? last : now;
 }
 
 void OtterController::voltage_Callback(const std_msgs::Float32& msg){
@@ -794,11 +793,10 @@ Eigen::Vector2d OtterController::thrustAllocation(Eigen::Vector3d tau_d)
   return u;
 }
 
-void OtterController::inputCallback(const usv_msgs::SpeedCourse& msg)
+void OtterController::inputCallback(const std_msgs::Float64MultiArray& msg)
 {
-  u_d = msg.speed; //到目的地是就会变为0
-  psi_d = msg.course;
-  
+  u_d = msg.data[0]; //到目的地是就会变为0
+  psi_d = msg.data[1];
   // ROS_INFO_STREAM("Psi_d: " << psi_d);
 }
 

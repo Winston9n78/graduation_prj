@@ -8,7 +8,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <usv_msgs/SpeedCourse.h>
+// #include <usv_msgs/SpeedCourse.h>
 
 namespace otter_coverage
 {
@@ -33,7 +33,7 @@ Guidance::Guidance()
       nh.subscribe("path_set", 100, &Guidance::path_callback, this);      
   //发布速度
   m_controllerPub =
-      nh.advertise<usv_msgs::SpeedCourse>("speed_heading", 10);
+      nh.advertise<std_msgs::Float64MultiArray>("speed_heading", 10);
 
   goal_point_pub =
       nh.advertise<geometry_msgs::PoseStamped>("goal_point", 10);
@@ -77,7 +77,7 @@ Guidance::Guidance()
 
         if(i != (point_number-4)) i+=2;
         else{
-          u = 0;//停船，这个u是期望速度，并且会发布出去，由于当前速度假设是2，因此当这个设置为2时船会停
+          u = 0;//停船，这个u是期望速度，并且会发布出去
           // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
         }
 
@@ -259,9 +259,9 @@ void Guidance::followPath(double x, double y, double psi, double x_start, double
   //   u = m_maxSpeedTurn; //算得期望速度
 
   // Publish speed and course to controller  将期望速度和期望航向角度的msg发生给控制器 为什么不发偏差呢？
-  usv_msgs::SpeedCourse msg;
-  msg.speed = u;
-  msg.course = chi_d;
+  std_msgs::Float64MultiArray msg;
+  msg.data.push_back(u);
+  msg.data.push_back(chi_d);
   m_controllerPub.publish(msg);  //最终发布期望航向角度和速度给控制器控制
 
   //ROS_INFO_STREAM("psi_d: " << chi_d << " psi: " << psi);
