@@ -111,7 +111,7 @@ OtterController::OtterController() : T(3, 2)
 
     //  std::cout << "角度输出：" << tauYaw << std::endl;
 
-    stick_to_point();
+    // stick_to_point();
 
 #if 0 /*对接测试*/
 
@@ -133,7 +133,7 @@ OtterController::OtterController() : T(3, 2)
     }
 
 #else /* 对准测试 */
-  // latching_algorithm();
+    latching_algorithm();
 #endif
 
     double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
@@ -497,8 +497,8 @@ int OtterController::stick_to_point(){
   static int count, done;
   double radius = 0.5; // holding半径
   //设定点应该自动计算
-  // x_error_stick = point_now_x - (1.3);//Point_set.pose.position.x;
-  // y_error_stick = point_now_y - (2.5);//Point_set.pose.position.y;
+  double x_error_dist = point_now_x - Point_set.pose.position.x;
+  double y_error_dist = point_now_y - Point_set.pose.position.y;
   x_error_stick = point_now_x_dvl_a50 - position_hold_x;
   y_error_stick = point_now_y_dvl_a50 - position_hold_y;
   angle_error_stick = angle_z - angle_hold;
@@ -517,7 +517,7 @@ int OtterController::stick_to_point(){
   stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   stick_to_point_pwm_o =  - (kp_stick_o * angle_error_stick + kd_stick_o * angular_velocity_z);
 
-  double dist = std::sqrt(std::pow(x_error_stick, 2) + std::pow(y_error_stick, 2));
+  double dist = std::sqrt(std::pow(x_error_dist, 2) + std::pow(y_error_dist, 2));
 
   std::cout << angle_error_stick << std::endl;
   // std::cout << angle_hold << std::endl;
@@ -534,7 +534,7 @@ int OtterController::stick_to_point(){
   //   latch_flag = false;
   // }
   if(!done) count++;
-  if(!Arrive_master && count > 100){ //dist < radius 
+  if(!Arrive_master && count > 100){ //if(dist < radius)
     Arrive_master = true;
     angle_hold = angle_z;
     position_hold_x = point_now_x_dvl_a50;
