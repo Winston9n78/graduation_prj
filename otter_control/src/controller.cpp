@@ -44,7 +44,7 @@ OtterController::OtterController() : T(3, 2)
   ros::Subscriber sub = nh.subscribe("speed_heading", 1000, &OtterController::inputCallback, this); //获得速度和期望航向角
   ros::Subscriber sub_imu = nh.subscribe("imu_data", 1000, &OtterController::imu_Callback, this); //获得imu数据作为控制
   // ros::Subscriber sub_voltage = nh.subscribe("voltage", 1000, &OtterController::voltage_Callback, this);
-  //3400 14v
+  // 3400 14v
   ros::Subscriber sub_ariltag = nh.subscribe("/tag_detections", 1, &OtterController::apriltag_Callback, this);
 
   ros::Subscriber goal_Sub = nh.subscribe("goal_point", 1000, &OtterController::setPoint, this); //从这个话题中得到一个坐标，然后回调，存到标准类型的向量里，然后使用。
@@ -59,6 +59,9 @@ OtterController::OtterController() : T(3, 2)
 
   ros::Subscriber sub_dvl_a50 = 
       nh.subscribe("dvl_a50", 10, &OtterController::dvl_a50_Callback, this);
+
+  ros::Subscriber sub_reverse_flag = 
+      nh.subscribe("reverse_flag", 1, &OtterController::reverse_flag_Callback, this);
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
   tf::TransformListener listener;
@@ -840,6 +843,11 @@ void OtterController::lock_statusCB(const std_msgs::Bool& msg){
 void OtterController::callback(const ros::TimerEvent& event)
 {
   if(start) count++;
+}
+
+void OtterController::reverse_flag_Callback(const std_msgs::Bool& msg)
+{
+  reverse_flag = msg.data;
 }
 
 void OtterController::get_control_param(){

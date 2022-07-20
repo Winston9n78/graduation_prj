@@ -25,6 +25,9 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/highgui/highgui.hpp>
+
 #define SERV_PORT_8001  8001
 #define SERV_PORT_8002  8002
 #define SERV_PORT_8003  8003

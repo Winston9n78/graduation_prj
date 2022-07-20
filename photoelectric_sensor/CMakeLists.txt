@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(message_udp_status)
+project(photoelectric_sensor)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,10 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  otter_control
-  cv_bridge
-  image_transport
-  OpenCV
 )
 
 ## System dependencies are found with CMake's conventions
@@ -108,7 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES message_udp
+#  LIBRARIES photoelectric_sensor
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
@@ -120,13 +116,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+# include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/message_udp.cpp
+#   src/${PROJECT_NAME}/photoelectric_sensor.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -137,7 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/message_udp_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/photoelectric_sensor_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -157,28 +153,6 @@ include_directories(
 #############
 ## Install ##
 #############
-
-add_executable(message_udp_status 
-  include/message_udp_status/message_udp_status.h
-  src/message_udp_status.cpp
-  src/handle_of_8001.cpp
-  src/handle_of_8002.cpp
-  src/handle_of_8003.cpp
-  src/handle_of_8004.cpp
-  src/handle_of_8005.cpp
-  src/handle_of_8006.cpp
-  src/handle_of_8007.cpp
-  src/handle_of_8008.cpp
-  src/handle_of_8009.cpp
-  src/init.cpp)
-target_link_libraries(message_udp_status ${catkin_LIBRARIES})
-add_dependencies(message_udp_status ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(message_udp_status otter_control_generate_messages_cpp)
-
-# add_executable(message_udp_status src/message_udp_status.cpp)
-# target_link_libraries(message_udp_status ${catkin_LIBRARIES})
-# add_dependencies(message_udp_status ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(message_udp_status otter_control_generate_messages_cpp)
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
@@ -223,7 +197,7 @@ add_dependencies(message_udp_status otter_control_generate_messages_cpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_message_udp.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_photoelectric_sensor.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -57,6 +57,8 @@ private:
   void keyboard_Callback(const std_msgs::Int32MultiArray& msg);
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
 
+  void reverse_flag_Callback(const std_msgs::Bool& msg);
+
   void setPoint(const geometry_msgs::PoseStamped& point);
 
   void lock_statusCB(const std_msgs::Bool& msg);
@@ -71,6 +73,8 @@ private:
 
   void cb(parameter_server::drConfig& config, uint32_t level);
   double minimize(double error, double kp, double ki, double integral);
+
+
   
 
   // Heading controller
