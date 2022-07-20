@@ -50,28 +50,28 @@ int main(int argc, char** argv)
     nh.advertise<std_msgs::Float32MultiArray>("map_path", 10);
 
 
-  // sock_fd_init();
-  // serv_addr_init_all();
-  // client_addr_init_all();
+  sock_fd_init();
+  serv_addr_init_all();
+  client_addr_init_all();
 
-  // if(sock_fd_check())
-  // {
-  //   perror("socket");
-  //   exit(1);
-  // }
+  if(sock_fd_check())
+  {
+    perror("socket");
+    exit(1);
+  }
 
   /* 绑定socket */
-  // if(bind_check())
-  // {
-  //   perror("bind error:");
-  //   exit(1);
-  // }
+  if(bind_check())
+  {
+    perror("bind error:");
+    exit(1);
+  }
 
-  // len = sizeof(addr_serv_8001);
+  len = sizeof(addr_serv_8001);
 
-  // thread_on();
-  cv::namedWindow("view");
-  cv::startWindowThread();
+  thread_on();
+  // cv::namedWindow("view");
+  // cv::startWindowThread();
 
   double frequency = 10.0;
   ros::Rate rate(frequency);
