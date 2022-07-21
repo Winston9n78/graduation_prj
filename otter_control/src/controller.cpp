@@ -22,8 +22,6 @@
 
 #include <queue>
 
-
-
 OtterController::OtterController() : T(3, 2)
 {
   ros::NodeHandle nh;
@@ -216,9 +214,11 @@ OtterController::OtterController() : T(3, 2)
     std::cout << "head_output: " << head_output << std::endl;
     // ROS_INFO_STREAM("tail_output: " << tail_output);std::fixed << std::setprecision(2) <<
     std::cout << "tail_output: " << 3000 - tail_output << std::endl;
-    std::cout << "x: " << point_now_x_dvl_a50 << std::endl;
-    std::cout << "y: " << point_now_y_dvl_a50 << std::endl;
-    std::cout << "y: " << stick_to_point_pwm_x << std::endl;
+    // std::cout << "x: " << x_error_connect << std::endl;
+    printf("x:%.2f\n",x_error_connect);
+    printf("y:%.2f\n",y_error_connect);
+    // std::cout << "y: " << y_error_connect << std::endl;
+    // std::cout << "y: " << stick_to_point_pwm_x << std::endl;
     //std::cout << "do: " << orientation_error << std::endl;
     //ROS_INFO_STREAM("--------------------------INFO-------------------------------");
     std::cout << "--------------------------INFO-------------------------------" << std::endl;
@@ -241,7 +241,7 @@ int OtterController::latching_algorithm(){
 
   static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
   const double x_offset = 1.36, x_offset_back = 1.8;
-  const double y_offset = 0.03;
+  const double y_offset = 0.015;
   const double o_offset = 2.9;
 
   connect_pwm_y = minimize(y_error_connect - y_offset, kp_con_y, kd_con_y, d_y);

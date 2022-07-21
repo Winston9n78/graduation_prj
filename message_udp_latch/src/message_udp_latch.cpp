@@ -62,7 +62,7 @@ void recieve_thread_function(){
       exit(1);
     }
     recv_buf[recv_num] = '\0';
-    std::cout<<"server receive " << recv_num << " bytes: " << recv_buf;
+    std::cout<<"server receive " << recv_num << " bytes: " << recv_buf << std::endl;
 
     /*提取数字给is_ok_from_a*/
     if(recv_num > 0){

@@ -23,8 +23,8 @@ void image_callback(const sensor_msgs::ImageConstPtr& msg){
   try
   {
     cv::Mat image = cv::imdecode(cv::Mat(msg->data), 1);
-    cv::imshow("view", image);
-    cv::waitKey(10);
+    // cv::imshow("view", image);
+    // cv::waitKey(10);
 
   }
   catch(const cv_bridge::Exception& e)
@@ -49,27 +49,26 @@ int main(int argc, char** argv)
   path_pub =
     nh.advertise<std_msgs::Float32MultiArray>("map_path", 10);
 
-
   sock_fd_init();
-  serv_addr_init_all();
-  client_addr_init_all();
+  // serv_addr_init_all();
+  // client_addr_init_all();
 
-  if(sock_fd_check())
-  {
-    perror("socket");
-    exit(1);
-  }
+  // if(sock_fd_check())
+  // {
+  //   perror("socket");
+  //   exit(1);
+  // }
 
-  /* 绑定socket */
-  if(bind_check())
-  {
-    perror("bind error:");
-    exit(1);
-  }
+  // /* 绑定socket */
+  // if(bind_check())
+  // {
+  //   perror("bind error:");
+  //   exit(1);
+  // }
 
-  len = sizeof(addr_serv_8001);
+  // len = sizeof(addr_serv_8001);
 
-  thread_on();
+  // thread_on();
   // cv::namedWindow("view");
   // cv::startWindowThread();
 
@@ -78,7 +77,6 @@ int main(int argc, char** argv)
 
   while(nh.ok())
   {
-
     ros::spinOnce();
     rate.sleep();
   }
