@@ -11,7 +11,7 @@ void client_addr_init(struct sockaddr_in &sockaddr, int port){
   memset(&sockaddr, 0, sizeof(struct sockaddr_in));  //每个字节都用0填充
   sockaddr.sin_family = AF_INET;
   sockaddr.sin_port = htons(port);
-  inet_pton(AF_INET, "192.168.1.102", &sockaddr.sin_addr.s_addr);
+  inet_pton(AF_INET, "192.168.1.100", &sockaddr.sin_addr.s_addr);
 }
 
 void sock_fd_init(){
@@ -39,15 +39,15 @@ void serv_addr_init_all(){
 }
 
 void client_addr_init_all(){
-    client_addr_init(addr_client_8001, SERV_PORT_8001);
-    client_addr_init(addr_client_8002, SERV_PORT_8002);
-    client_addr_init(addr_client_8003, SERV_PORT_8003);
-    client_addr_init(addr_client_8004, SERV_PORT_8004);
-    client_addr_init(addr_client_8005, SERV_PORT_8005);
-    client_addr_init(addr_client_8006, SERV_PORT_8006);
-    client_addr_init(addr_client_8007, SERV_PORT_8007);
-    client_addr_init(addr_client_8008, SERV_PORT_8008);
-    client_addr_init(addr_client_8009, SERV_PORT_8009);
+    client_addr_init(addr_client_8001, SERV_PORT_9001);
+    client_addr_init(addr_client_8002, SERV_PORT_9002);
+    client_addr_init(addr_client_8003, SERV_PORT_9003);
+    client_addr_init(addr_client_8004, SERV_PORT_9004);
+    client_addr_init(addr_client_8005, SERV_PORT_9005);
+    client_addr_init(addr_client_8006, SERV_PORT_9006);
+    client_addr_init(addr_client_8007, SERV_PORT_9007);
+    client_addr_init(addr_client_8008, SERV_PORT_9008);
+    client_addr_init(addr_client_8009, SERV_PORT_9009);
 }
 
 bool bind_check(){
@@ -76,32 +76,32 @@ bool sock_fd_check(){
 
 void thread_on(){
 
-  std::thread recv_msg_8001(recieve_thread_function_8001);
-  std::thread send_msg_8001(send_thread_function_8001);
+    // std::thread recv_msg_8001(recieve_thread_function_8001);
+    // std::thread send_msg_8001(send_thread_function_8001);
 
-  std::thread recv_msg_8002(recieve_thread_function_8002);
-  std::thread send_msg_8002(send_thread_function_8002);
+//   std::thread recv_msg_8002(recieve_thread_function_8002);
+//   std::thread send_msg_8002(send_thread_function_8002);
 
-  std::thread recv_msg_8003(recieve_thread_function_8003);
-  std::thread send_msg_8003(send_thread_function_8003);
+//   std::thread recv_msg_8003(recieve_thread_function_8003);
+//   std::thread send_msg_8003(send_thread_function_8003);
 
-  std::thread recv_msg_8004(recieve_thread_function_8004);
-  std::thread send_msg_8004(send_thread_function_8004);
+//   std::thread recv_msg_8004(recieve_thread_function_8004);
+//   std::thread send_msg_8004(send_thread_function_8004);
 
-  std::thread recv_msg_8005(recieve_thread_function_8005);
-  std::thread send_msg_8005(send_thread_function_8005);
+//   std::thread recv_msg_8005(recieve_thread_function_8005);
+//   std::thread send_msg_8005(send_thread_function_8005);
 
-  std::thread recv_msg_8006(recieve_thread_function_8006);
-  std::thread send_msg_8006(send_thread_function_8006);
+//   std::thread recv_msg_8006(recieve_thread_function_8006);
+//   std::thread send_msg_8006(send_thread_function_8006);
 
-  std::thread recv_msg_8007(recieve_thread_function_8007);
-  std::thread send_msg_8007(send_thread_function_8007);
+//   std::thread recv_msg_8007(recieve_thread_function_8007);
+//   std::thread send_msg_8007(send_thread_function_8007);
 
-  std::thread recv_msg_8008(recieve_thread_function_8008);
-  std::thread send_msg_8008(send_thread_function_8008);
+//   std::thread recv_msg_8008(recieve_thread_function_8008);
+//   std::thread send_msg_8008(send_thread_function_8008);
 
-  std::thread recv_msg_8009(recieve_thread_function_8009);
-  std::thread send_msg_8009(send_thread_function_8009);
+//   std::thread recv_msg_8009(recieve_thread_function_8009);
+//   std::thread send_msg_8009(send_thread_function_8009);
 
 }
 

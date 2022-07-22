@@ -5,6 +5,8 @@
 
 bool is_ok_a, is_ok_b, done;
 
+bool at9_control_1, at9_control_2, at9_control_3;
+
 void status_callback_a(const std_msgs::Bool msg){
     is_ok_a = msg.data;
 }
@@ -23,6 +25,7 @@ int main(int argc, char** argv){
 
     ros::Subscriber status_a_sub = nh.subscribe("is_ok_from_a", 1, &status_callback_a);
     ros::Subscriber status_b_sub = nh.subscribe("is_ok_from_b", 1, &status_callback_b);
+
     latch_signal = nh.advertise<std_msgs::Int32MultiArray>("latch_command", 1);
     is_lock_ok = nh.advertise<std_msgs::Bool>("is_lock_ok", 1); //将锁是否闭合完成发布出去
     std_msgs::Int32MultiArray control_cmd;

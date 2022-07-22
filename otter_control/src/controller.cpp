@@ -112,6 +112,9 @@ OtterController::OtterController() : T(3, 2)
 
     //  std::cout << "角度输出：" << tauYaw << std::endl;
 
+    tauSurge = 0;//calculateSurgeForce(deltaTime, velocity);
+    tauYaw = calculateYawMoment(deltaTime, heading_angle, 0);
+
     // stick_to_point();
 
 #if 0 /*对接测试*/
@@ -243,6 +246,7 @@ int OtterController::latching_algorithm(){
   const double x_offset = 1.36, x_offset_back = 1.8;
   const double y_offset = 0.015;
   const double o_offset = 2.9;
+  static int count = 0;
 
   connect_pwm_y = minimize(y_error_connect - y_offset, kp_con_y, kd_con_y, d_y);
   connect_pwm_orientation = minimize(orientation_error - o_offset, kp_con_orient, kd_con_orient, angular_velocity_z);
@@ -285,7 +289,7 @@ int OtterController::latching_algorithm(){
 /*****************************本船对接******************************************************/
     
     if(!done_flag){
-      if(!back_flag){
+      if(!back_flag){      
         if((y_error_connect - y_offset) < 0.1 && (y_error_connect - y_offset) > -0.1 
             && (orientation_error - o_offset) < 5 && (orientation_error - o_offset) > -5)
           connect_pwm_x = minimize(x_error_connect - x_offset, kp_con_x, kd_con_x, d_x);//测试
@@ -318,7 +322,7 @@ int OtterController::latching_algorithm(){
           done_flag = 1;/*退出对接程序*/
         }
         /*对接失败*/
-        else if((x_error_connect - x_offset_back) < 0.08 && (x_error_connect - x_offset_back) > -0.08){ 
+        else if((x_error_connect - x_offset_back) < 0.08 && (x_error_connect - x_offset_back) > -0.08 && count > 110){ 
           back_flag = 0; /*后退标志位置0*/
           is_ok = 0; /*锁打开*/
           start = 0; /*关闭计时*/
@@ -763,7 +767,7 @@ double OtterController::calculateYawMoment(double deltaTime, double psi_slam, do
   if(psi_tilde > 60) speed_shutdown_flag = true;
   else speed_shutdown_flag = false;
   
-  D = psi_tilde - error_last;
+  D = angular_velocity_z;//psi_tilde - error_last;
   error_last = psi_tilde;
   // TODO: anti windup
   integralTerm += psi_tilde * deltaTime;

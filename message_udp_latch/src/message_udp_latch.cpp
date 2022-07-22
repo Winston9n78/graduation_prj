@@ -39,6 +39,11 @@ void to_lock_callback(const std_msgs::Bool msg){
     is_ok = msg.data;
 }
 
+bool reverse_flag = 0;
+void reverse_flag_callback(const std_msgs::Bool msg){
+  reverse_flag = msg.data;
+}
+
 int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 struct sockaddr_in addr_serv;
 int len;
@@ -72,6 +77,7 @@ void recieve_thread_function(){
       boost::split(vStr, str, boost::is_any_of( ",:" ), boost::token_compress_on);
       is_ok_from_a = std::stod(vStr[1]);
       // std::cout << is_ok_from_a << std::endl;
+      // 被动船：reverse_flag = std::stod(vStr[3]); 并且publish出去
 
     }
     addr_client_ = addr_client;
@@ -107,6 +113,7 @@ int main(int argc, char** argv)
 
   ros::Subscriber status_sub = nh.subscribe("usv_status", 1, &usv_status_callback);
   ros::Subscriber to_lock_sub = nh.subscribe("is_ok_from_b", 1, &to_lock_callback);
+  ros::Subscriber reverse_flag_sub = nh.subscribe("reverse_flag", 1, &reverse_flag_callback);
   is_ok_pub = nh.advertise<std_msgs::Bool>("is_ok_from_a", 1);
   /* sock_fd --- socket文件描述符 创建udp套接字*/
   // int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -159,6 +166,11 @@ int main(int argc, char** argv)
     std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
     lock_status += asString;
 
+    ss.str("");
+    lock_status += ",reverse_flag:";
+    ss << reverse_flag;
+    asString = ss.str();
+    lock_status += asString;
 
     std_msgs::Bool is_ok_from_a_;
     is_ok_from_a_.data = static_cast<bool>(is_ok_from_a);

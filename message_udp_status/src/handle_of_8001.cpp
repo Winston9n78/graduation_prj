@@ -13,7 +13,10 @@ int sock_fd_8001;
 void recieve_thread_function_8001(){
 
   int recv_num;
+  
+
   while(1){
+
     recv_num = recvfrom(sock_fd_8001, recv_buf_8001, sizeof(recv_buf_8001), 0, (struct sockaddr *)&addr_client_8001, (socklen_t *)&len);
     if(recv_num < 0)
     {
@@ -40,6 +43,7 @@ void send_thread_function_8001(){
     //   perror("sendto error:");
     //   exit(1);
     // }
-    // sleep(1);
+    // printf("test...\n");
+    sleep(1);
   }
 }

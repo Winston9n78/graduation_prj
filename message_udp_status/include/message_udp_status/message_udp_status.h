@@ -38,6 +38,16 @@
 #define SERV_PORT_8008  8008
 #define SERV_PORT_8009  8009
 
+#define SERV_PORT_9001  9001
+#define SERV_PORT_9002  9002
+#define SERV_PORT_9003  9003
+#define SERV_PORT_9004  9004
+#define SERV_PORT_9005  9005
+#define SERV_PORT_9006  9006
+#define SERV_PORT_9007  9007
+#define SERV_PORT_9008  9008
+#define SERV_PORT_9009  9009
+
 extern int sock_fd_8001;
 extern int sock_fd_8002;
 extern int sock_fd_8003;
