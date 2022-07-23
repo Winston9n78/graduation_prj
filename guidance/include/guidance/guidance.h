@@ -6,6 +6,7 @@
 #include <nav_msgs/Path.h>
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Float32MultiArray.h>
 #include "guidance/usv_pose.h"
 #include <nlink_parser/LinktrackAnchorframe0.h>
 #include "stof/stof.h"
@@ -30,7 +31,7 @@ namespace otter_coverage
       return std::sqrt(std::pow(x1 - x0, 2) + std::pow(y1 - y0, 2));
     }
     void set_v_callback(const std_msgs::Float32& msg);
-    void path_callback(const std_msgs::Float64MultiArray& msg);
+    void path_callback(const std_msgs::Float32MultiArray& msg);
 
     void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg);
 
@@ -38,7 +39,8 @@ namespace otter_coverage
 
     std::vector<geometry_msgs::PoseStamped>::iterator iterator_path;
 
-    double m_path[point_number];
+    double m_path[point_number] = {0}; //来自rqt
+    double map_path[1024] = {0}, map_path_size = 0; //来自上位机
     double u = 1; //期望速度是1，当前当前速度设置为0，调P让他动起来
 
     ros::Publisher m_controllerPub;

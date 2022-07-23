@@ -167,7 +167,7 @@ int main(int argc, char** argv)
     lock_status += asString;
 
     ss.str("");
-    lock_status += ",reverse_flag:";
+    lock_status += ",reverse_flag:"; //被动船应该解码并且在此文件发布出去，在output.py中订阅，主动船是在output.py中发布出去的
     ss << reverse_flag;
     asString = ss.str();
     lock_status += asString;

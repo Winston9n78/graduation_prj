@@ -60,7 +60,20 @@ extern int sock_fd_8009;
 
 extern int len;
 
+extern bool recv_flag;
+extern int open_camera,close_camera,boat_reset;
+extern std_msgs::Bool commander_order_start,commander_order_reset;
+
 extern std::string usv_status;
+
+extern std::vector<uchar> buf;
+extern std::vector<uchar> buf_origin;
+
+extern unsigned char *encodeImg;
+
+extern std::vector<uchar> buff;
+
+extern cv::Mat frame;
 
 extern struct sockaddr_in addr_serv_8001;
 extern struct sockaddr_in addr_client_8001, addr_client_8001_;

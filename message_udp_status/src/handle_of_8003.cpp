@@ -12,7 +12,7 @@ char recv_buf_8003[50] = "x:0,y:0,angle:0";
 
 int key;
 
-int open_camera,close_camera;
+int ship_open, ship_close, ship_reset;
 
 void recieve_thread_function_8003(){
   int recv_num;
@@ -42,8 +42,9 @@ void recieve_thread_function_8003(){
             std::cout << recv_data << std::endl;
             switch (key)
             {
-                case 1:open_camera = recv_data;/* code */break;
-                case 2:close_camera = recv_data;/* code */break;
+                case 1:ship_open = recv_data;/* code */break;
+                case 2:ship_close = recv_data;/* code */break;
+                case 3:commander_order_start.data = recv_data;/* code */break;
                 default:
                 break;
             }

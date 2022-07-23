@@ -8,6 +8,7 @@ import time
 import rospy
 from std_msgs.msg import Bool
 from std_msgs.msg import Int32MultiArray
+from std_msgs.msg import Int32
 import time
 
 a = 0
@@ -62,9 +63,13 @@ def talker():
 
     sub_at9_status = rospy.Subscriber('/at9_control_1', Bool, at9_callback_1)
     sub_at9_status = rospy.Subscriber('/at9_control_2', Bool, at9_callback_2)
-    sub_at9_status = rospy.Subscriber('/at9_control_3', Bool, at9_callback_3)
+    sub_at9_status = rospy.Subscriber('/at9_control_3', Int32, at9_callback_3)
 
     sub_reverse_status = rospy.Subscriber('/reverse_flag', Bool, reverse_callback)
+
+    pub_reverse_flag = rospy.Publisher('reverse_flag', Bool, queue_size=1)
+
+    reverse_flag = False
 
     serial_sensor = serial.Serial("/dev/ttyUSB1", timeout=5)
 
@@ -74,11 +79,11 @@ def talker():
     send_signal_1_back = '01 0F 00 00 00 04 01 0A BE 91'
     send_signal_1_back = bytes.fromhex(send_signal_1_back)
 
-    send_signal_2 = '01 02 00 00 00 04 79 C9'
-    send_signal_2 = bytes.fromhex(send_signal_2)
+    send_signal_2_out = '01 02 00 00 00 04 79 C9'
+    send_signal_2_out = bytes.fromhex(send_signal_2_out)
 
-    send_signal_3 = '01 02 00 00 00 04 79 C9'
-    send_signal_3 = bytes.fromhex(send_signal_3)
+    send_signal_2_back = '01 02 00 00 00 04 79 C9'
+    send_signal_2_back = bytes.fromhex(send_signal_2_back)
 
     send_signal_4 = '01 02 00 00 00 04 79 C9'
     send_signal_4 = bytes.fromhex(send_signal_4)
@@ -95,36 +100,57 @@ def talker():
 
         # print(is_at9_open)
         if is_at9_open == True:
+            # print(at9_control_1,at9_control_2,at9_control_3)
             if at9_control_1:
                 serial_sensor.write(send_signal_1_out)
             else:
                 serial_sensor.write(send_signal_1_back)
-
-            # if at9_control_2:
-            #     serial_sensor.write(send_signal_2)
-            # else:
-            #     serial_sensor.write(send_signal_2)
-
-            # if at9_control_3:
-            #     serial_sensor.write(send_signal_2)
-            # else:
-            #     serial_sensor.write(send_signal_2)
             
-        elif  (not is_at9_open) and reverse_flag: #翻转的时候才需要控制，这里是主动船
+            # 被动船加
+            # if at9_control_2:
+            #     serial_sensor.write(send_signal_2_out)
+            # else:
+            #     serial_sensor.write(send_signal_2_back)
+
+            # 主动船和被动船都加，都只是遥控
+            # if at9_control_3 == 1:
+            #     serial_sensor.write(send_signal_2) #支腿上升
+            # elif at9_control_3 == 2:
+            #     serial_sensor.write(send_signal_2) #支腿下降
+            # else:
+            #     serial_sensor.write(send_signal_2) #支腿不动作
+            
+        elif  (not is_at9_open) and reverse_flag: #翻转的时候才需要控制，这里是主动船,只有一个钩子
             if a: #开关钩子1
-                serial_sensor.write(send_signal_2)
+                serial_sensor.write(send_signal_2_out)
             else:
-                serial_sensor.write(send_signal_2)
+                serial_sensor.write(send_signal_2_out)
 
-            if b: #开关钩子2
-                serial_sensor.write(send_signal_3)
-            else:
-                serial_sensor.write(send_signal_4)
+            # 被动船加，主动船只有一个
+            # if b: #开关钩子2
+            #     serial_sensor.write(send_signal_2_out)
+            # else:
+            #     serial_sensor.write(send_signal_4)
 
-            if c: #开关支撑杆
-                serial_sensor.write(send_signal_5)
-            else:
-                serial_sensor.write(send_signal_6)
+        # 读取光电传感器数据并且publish，被动船无需此功能
+        send_signal = '01 02 00 00 00 04 79 C9'
+        send_signal = bytes.fromhex(send_signal)
+        serial_sensor.write(send_signal)        
+        time.sleep(0.1)
+        count= serial_sensor.inWaiting()
+        if count > 0:
+            recv_data = serial_sensor.read(count)
+            # print(recv_data)
+
+        if recv_data == b'\x01\x02\x01\x01`H' :
+            reverse_flag = True
+        elif recv_data == b'\x01\x02\x01\x02 I':
+            reverse_flag = False
+        else:
+            print("camera in wrong position!!")
+
+        reverse_flag = Bool(data = reverse_flag)
+        pub_reverse_flag.publish(reverse_flag)
 
         rate.sleep()
 

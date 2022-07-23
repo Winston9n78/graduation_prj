@@ -30,7 +30,7 @@ Guidance::Guidance()
       nh.subscribe("velocity_set", 1000, &Guidance::set_v_callback, this);
 
   ros::Subscriber path_sub = 
-      nh.subscribe("path_set", 100, &Guidance::path_callback, this);      
+      nh.subscribe("/map_path", 10, &Guidance::path_callback, this);      
   //发布速度
   m_controllerPub =
       nh.advertise<std_msgs::Float64MultiArray>("speed_heading", 10);
@@ -56,38 +56,40 @@ Guidance::Guidance()
     ros::param::get("/OtterController/path_point", str);
     // std::cout << str << std::endl;
     GetFloat(str, m_path);//路径点数变多时对应修改point_num, 在stof中
-    std::cout << m_path[0] << std::endl;
-    std::cout << m_path[1] << std::endl;
-    std::cout << m_path[2] << std::endl;
-    std::cout << m_path[3] << std::endl;
+    // std::cout << m_path[0] << std::endl;
+    // std::cout << m_path[1] << std::endl;
+    // std::cout << m_path[2] << std::endl;
+    // std::cout << m_path[3] << std::endl;
     /*
-    在这里订阅UBW进行计算，替换上面三个角度
+      在这里订阅UBW进行计算，替换上面三个角度
     */
     //路径方向的切换与
     // std::vector<geometry_msgs::PoseStamped>::iterator closest;
     // for(auto it = m_path.poses.begin(); it != m_path.poses.end(); it++){
 
-    //   double distance = dist(x_0, y_0, (it+1)->pose.position.x, (it+1)->pose.position.y);
+    // double distance = dist(x_0, y_0, (it+1)->pose.position.x, (it+1)->pose.position.y);
+    
+    /*****************rqt设置下*********************/
     static int i = 0;
+    if(dist(x_0, y_0, m_path[i+2], m_path[i+3]) < 0.5){
 
-    // }
-    if(1){
-
-      if(dist(x_0, y_0, m_path[i+2], m_path[i+3]) < 0.5){
-
-        if(i != (point_number-4)) i+=2;
-        else{
-          u = 0;//停船，这个u是期望速度，并且会发布出去
-          // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
-        }
-
-        //循环运行可以在这里改逻辑
+      if(i != (point_number-4)) i+=2;
+      else{
+        u = 0;//停船，这个u是期望速度，并且会发布出去
+        // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
       }
+
+      //循环运行可以在这里改逻辑
+    }
+    /*****************上位机设置下*********************/
+    // static int j;
+    // if(dist(x_0, y_0, map_path[j+2], map_path[j+3] < 0.5)){
+    //   if(j != (map_path_size - 4)) j+=2;
+    //   else u = 0;
+    // }
 
       // std::cout << "x0 = " << m_path[i+0] << ", y0 = " << m_path[i+1] << std::endl;
       // std::cout << "x1 = " << m_path[i+2] << ", y1 = " << m_path[i+3] << std::endl;
-
-    }
 
     // 将最终目标点坐标publish
     geometry_msgs::PoseStamped goal_point_;
@@ -135,10 +137,12 @@ void Guidance::tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg)
 
 }
 
-void Guidance::path_callback(const std_msgs::Float64MultiArray& msg){
+void Guidance::path_callback(const std_msgs::Float32MultiArray& msg){
 
-  // for(int i =0; i < 10; i++)
-  //   m_path[i] = msg.data[i];
+  map_path_size = msg.data.size();
+  for(int i = 0; i < msg.data.size(); i++){
+    map_path[i] = msg.data[i];
+  }
 
 }
 
