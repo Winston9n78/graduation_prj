@@ -40,10 +40,10 @@ int main(int argc, char** argv){
     // a锁与b锁
     int a = 0, b = 1, c = 2, d = 3;
     //设置默认状态打开钩子
-    control_cmd.data.push_back(1);
-    control_cmd.data.push_back(1);
-    control_cmd.data.push_back(1);
-    control_cmd.data.push_back(1);
+    control_cmd.data.push_back(0);
+    control_cmd.data.push_back(0);
+    control_cmd.data.push_back(0);
+    control_cmd.data.push_back(0);
 
     latch_signal.publish(control_cmd);
     // ros::Duration(5).sleep(); // 0.5ms脉冲

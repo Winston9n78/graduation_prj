@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Bool.h>
 #include "guidance/usv_pose.h"
 #include <nlink_parser/LinktrackAnchorframe0.h>
 #include "stof/stof.h"
@@ -36,6 +37,9 @@ namespace otter_coverage
     void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg);
 
     void path_set();
+
+    void reset_flag_Callback(const std_msgs::Bool& msg);
+    void reset();
 
     std::vector<geometry_msgs::PoseStamped>::iterator iterator_path;
 
@@ -73,6 +77,9 @@ namespace otter_coverage
     double heading_angle;
 
     double m_path_[point_number];
+
+    bool reset_flag;
+    int path_i = 0, path_j = 0;
 
     guidance::usv_pose usv_pose;
   };

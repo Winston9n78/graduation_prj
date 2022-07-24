@@ -79,20 +79,20 @@ def talker():
     send_signal_1_back = '01 0F 00 00 00 04 01 0A BE 91'
     send_signal_1_back = bytes.fromhex(send_signal_1_back)
 
-    send_signal_2_out = '01 02 00 00 00 04 79 C9'
-    send_signal_2_out = bytes.fromhex(send_signal_2_out)
+    # send_signal_2_out = '01 02 00 00 00 04 79 C9'
+    # send_signal_2_out = bytes.fromhex(send_signal_2_out)
 
-    send_signal_2_back = '01 02 00 00 00 04 79 C9'
-    send_signal_2_back = bytes.fromhex(send_signal_2_back)
+    # send_signal_2_back = '01 02 00 00 00 04 79 C9'
+    # send_signal_2_back = bytes.fromhex(send_signal_2_back)
 
-    send_signal_4 = '01 02 00 00 00 04 79 C9'
-    send_signal_4 = bytes.fromhex(send_signal_4)
+    # send_signal_4 = '01 02 00 00 00 04 79 C9'
+    # send_signal_4 = bytes.fromhex(send_signal_4)
 
-    send_signal_5 = '01 02 00 00 00 04 79 C9'
-    send_signal_5 = bytes.fromhex(send_signal_5)
+    # send_signal_5 = '01 02 00 00 00 04 79 C9'
+    # send_signal_5 = bytes.fromhex(send_signal_5)
 
-    send_signal_6 = '01 02 00 00 00 04 79 C9'
-    send_signal_6 = bytes.fromhex(send_signal_6)
+    # send_signal_6 = '01 02 00 00 00 04 79 C9'
+    # send_signal_6 = bytes.fromhex(send_signal_6)
 
     rate = rospy.Rate(10) # 10hz
 
@@ -122,9 +122,9 @@ def talker():
             
         elif  (not is_at9_open) and reverse_flag: #翻转的时候才需要控制，这里是主动船,只有一个钩子
             if a: #开关钩子1
-                serial_sensor.write(send_signal_2_out)
+                serial_sensor.write(send_signal_1_out)
             else:
-                serial_sensor.write(send_signal_2_out)
+                serial_sensor.write(send_signal_1_back)
 
             # 被动船加，主动船只有一个
             # if b: #开关钩子2

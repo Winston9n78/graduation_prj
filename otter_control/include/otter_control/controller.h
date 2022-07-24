@@ -58,6 +58,8 @@ private:
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
 
   void reverse_flag_Callback(const std_msgs::Bool& msg);
+  void reset_flag_Callback(const std_msgs::Bool& msg);
+  void reset();
 
   void setPoint(const geometry_msgs::PoseStamped& point);
 
@@ -167,7 +169,11 @@ private:
   bool is_ok = false, is_lock_ok = false;
   int start = 0, count = 0;
 
-  bool reverse_flag = false;
+  bool reverse_flag = false, reset_flag = false;
+  bool turn_off_guidance = false;
+
+  //latch_control中的变量
+  bool prepared_flag = 0, done_flag = 0, back_flag = 0;
 
   tf::StampedTransform transform; // my_bundle里的坐标变换关系
 

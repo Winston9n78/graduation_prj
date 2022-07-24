@@ -30,7 +30,10 @@ Guidance::Guidance()
       nh.subscribe("velocity_set", 1000, &Guidance::set_v_callback, this);
 
   ros::Subscriber path_sub = 
-      nh.subscribe("/map_path", 10, &Guidance::path_callback, this);      
+      nh.subscribe("/map_path", 10, &Guidance::path_callback, this);  
+
+  ros::Subscriber sub_reset_flag = 
+      nh.subscribe("/commander_order_reset", 1, &Guidance::reset_flag_Callback, this);    
   //发布速度
   m_controllerPub =
       nh.advertise<std_msgs::Float64MultiArray>("speed_heading", 10);
@@ -70,10 +73,10 @@ Guidance::Guidance()
     // double distance = dist(x_0, y_0, (it+1)->pose.position.x, (it+1)->pose.position.y);
     
     /*****************rqt设置下*********************/
-    static int i = 0;
-    if(dist(x_0, y_0, m_path[i+2], m_path[i+3]) < 0.5){
+    // static int path_i = 0;
+    if(dist(x_0, y_0, m_path[path_i+2], m_path[path_i+3]) < 0.5){
 
-      if(i != (point_number-4)) i+=2;
+      if(path_i != (point_number-4)) path_i+=2;
       else{
         u = 0;//停船，这个u是期望速度，并且会发布出去
         // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
@@ -82,7 +85,7 @@ Guidance::Guidance()
       //循环运行可以在这里改逻辑
     }
     /*****************上位机设置下*********************/
-    // static int j;
+    // static int path_j;
     // if(dist(x_0, y_0, map_path[j+2], map_path[j+3] < 0.5)){
     //   if(j != (map_path_size - 4)) j+=2;
     //   else u = 0;
@@ -97,7 +100,8 @@ Guidance::Guidance()
     goal_point_.pose.position.y = m_path[point_number - 1];
     goal_point_pub.publish(goal_point_);
 
-    followPath(x_0, y_0, heading_angle, m_path[i+0], m_path[i+1], m_path[i+2], m_path[i+3]);
+    followPath(x_0, y_0, heading_angle, m_path[path_i+0], m_path[path_i+1], m_path[path_i+2], m_path[path_i+3]);
+    // followPath(x_0, y_0, heading_angle, m_path[path_j+0], m_path[path_j+1], m_path[path_j+2], m_path[path_j+3]);
 
     //发布两个点的坐标到tf坐标系中，可以在rviz中显示
     usv_pose.x = x_0;
@@ -110,6 +114,10 @@ Guidance::Guidance()
 
     usv_pose_pub.publish(usv_pose);
 
+    if(reset_flag){
+      reset();
+    }
+
     ros::spinOnce();
     rate.sleep();
   }
@@ -120,7 +128,15 @@ Guidance::~Guidance() {}
 void Guidance::set_v_callback(const std_msgs::Float32& msg){
 
   // u = msg.data;
+}
 
+void Guidance::reset_flag_Callback(const std_msgs::Bool& msg)
+{
+  reset_flag = msg.data;
+}
+void Guidance::reset(){
+  path_i = 0;
+  path_j = 0;
 }
 
 void Guidance::tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg){

@@ -60,10 +60,12 @@ OtterController::OtterController() : T(3, 2)
 
   ros::Subscriber sub_reverse_flag = 
       nh.subscribe("reverse_flag", 1, &OtterController::reverse_flag_Callback, this);
+
+  ros::Subscriber sub_reset_flag = 
+      nh.subscribe("/commander_order_reset", 1, &OtterController::reset_flag_Callback, this);
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
   tf::TransformListener listener;
-  
 
   //启动动态参数服务器节点
   dynamic_reconfigure::Server<parameter_server::drConfig> server;
@@ -112,33 +114,19 @@ OtterController::OtterController() : T(3, 2)
 
     //  std::cout << "角度输出：" << tauYaw << std::endl;
 
-    tauSurge = 0;//calculateSurgeForce(deltaTime, velocity);
+    // 到达的话就停下来保持航向，看到二维码的话这俩输出都是0
+    
+    if(!Arrive_master) tauSurge = 100;
+    else tauSurge = 0;//calculateSurgeForce(deltaTime, velocity);
     tauYaw = calculateYawMoment(deltaTime, heading_angle, 0);
-
-    // stick_to_point();
-
-#if 0 /*对接测试*/
-
-    if(is_step1_done == false){
-      if(!Arrive_master) tauSurge = calculateSurgeForce(deltaTime, velocity);
-      else tauSurge = 0; //不仅u_d = 0(期望速度)，这里也为0
-      tauYaw = calculateYawMoment(deltaTime, heading_angle, 0); //根据控制周期，航向角控制
-      is_step1_done = stick_to_point(); /* 对点锁定 */
-    }
-
-    if(is_step1_done == true && (latch_statues!=1)){
-      latch_statues = latching_algorithm();// 对接逻辑，被动船不用
-      tauYaw = 0;
+    if(!flag_missed_target && !turn_off_guidance){
       tauSurge = 0;
+      tauYaw = 0;
+      flag_missed_target = true;
     }
 
-    if(latch_statues == 1){
-      /* 对接成功的操作 */ 
-    }
-
-#else /* 对准测试 */
+    stick_to_point(); //仅用来判断是否到达目标点，被动船则需要进行动力定位
     latching_algorithm();
-#endif
 
     double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
     double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_x - stick_to_point_pwm_o;
@@ -167,9 +155,9 @@ OtterController::OtterController() : T(3, 2)
     status.orientation_pitch = orientation_error;//pitch
     status.orientation_roll = roll;
     status.orientation_yaw = yaw;
-    status.position_x = camera_y;
-    status.position_y = camera_z;
-    status.position_z = camera_x;
+    status.position_x = point_now_x;
+    status.position_y = point_now_y;
+    // status.position_z = camera_x;
 
     std_msgs::Float32 left;
     left.data = static_cast<float>(left_output);
@@ -188,6 +176,10 @@ OtterController::OtterController() : T(3, 2)
     m_tailPub.publish(tail);
     usv_status_pub.publish(status);
     ok_to_latch.publish(is_ok_);
+
+    if(reset_flag){
+      reset();
+    }
 
 
     // 方便调试直接在这里输出信息了
@@ -242,11 +234,11 @@ return 1：对接成功
 */
 int OtterController::latching_algorithm(){
 
-  static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
+  // static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
   const double x_offset = 1.36, x_offset_back = 1.8;
   const double y_offset = 0.015;
   const double o_offset = 2.9;
-  static int count = 0;
+  // static int count = 0;
 
   connect_pwm_y = minimize(y_error_connect - y_offset, kp_con_y, kd_con_y, d_y);
   connect_pwm_orientation = minimize(orientation_error - o_offset, kp_con_orient, kd_con_orient, angular_velocity_z);
@@ -506,27 +498,27 @@ int OtterController::stick_to_point(){
   //设定点应该自动计算
   double x_error_dist = point_now_x - Point_set.pose.position.x;
   double y_error_dist = point_now_y - Point_set.pose.position.y;
-  x_error_stick = point_now_x_dvl_a50 - position_hold_x;
-  y_error_stick = point_now_y_dvl_a50 - position_hold_y;
-  angle_error_stick = angle_z - angle_hold;
+  // x_error_stick = point_now_x_dvl_a50 - position_hold_x;
+  // y_error_stick = point_now_y_dvl_a50 - position_hold_y;
+  // angle_error_stick = angle_z - angle_hold;
 
   /*角度偏差映射，防止临界值小误差大转动*/
-  if(angle_error_stick > 180 && angle_error_stick < 360) angle_error_stick -= 360;
-  if(angle_error_stick < -180 && angle_error_stick > -360) angle_error_stick += 360;
+  // if(angle_error_stick > 180 && angle_error_stick < 360) angle_error_stick -= 360;
+  // if(angle_error_stick < -180 && angle_error_stick > -360) angle_error_stick += 360;
 
-  d_hold_x = v_dvl_a50_x;//x_error_stick - x_error_last;
-  d_hold_y = v_dvl_a50_y;//y_error_stick - y_error_last;
+  // d_hold_x = v_dvl_a50_x;//x_error_stick - x_error_last;
+  // d_hold_y = v_dvl_a50_y;//y_error_stick - y_error_last;
 
-  x_error_last = x_error_stick;
-  y_error_last = y_error_stick;
+  // x_error_last = x_error_stick;
+  // y_error_last = y_error_stick;
   
-  stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
-  stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
-  stick_to_point_pwm_o =  - (kp_stick_o * angle_error_stick + kd_stick_o * angular_velocity_z);
+  // stick_to_point_pwm_x = (kp_stick_x * x_error_stick + kd_stick_x * d_hold_x);
+  // stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
+  // stick_to_point_pwm_o =  - (kp_stick_o * angle_error_stick + kd_stick_o * angular_velocity_z);
 
   double dist = std::sqrt(std::pow(x_error_dist, 2) + std::pow(y_error_dist, 2));
 
-  std::cout << angle_error_stick << std::endl;
+  // std::cout << angle_error_stick << std::endl;
   // std::cout << angle_hold << std::endl;
   // std::cout << x_error_stick << std::endl;
   // std::cout << y_error_stick << std::endl;
@@ -540,29 +532,30 @@ int OtterController::stick_to_point(){
   //   stick_to_point_pwm_y = (kp_stick_y * y_error_stick + kd_stick_y * d_hold_y);
   //   latch_flag = false;
   // }
-  if(!done) count++;
-  if(!Arrive_master && count > 100){ //if(dist < radius)
+  // if(!done) count++;
+  if(!Arrive_master && dist < radius){ //if(dist < radius)
     Arrive_master = true;
-    angle_hold = angle_z;
-    position_hold_x = point_now_x_dvl_a50;
-    position_hold_y = point_now_y_dvl_a50;
-    done = 1;
-    count = 0;
+    // angle_hold = angle_z;
+    // position_hold_x = point_now_x_dvl_a50;
+    // position_hold_y = point_now_y_dvl_a50;
+    // done = 1;
+    // count = 0;
   }
-  if(!Arrive_master){
-    stick_to_point_pwm_x = 0;
-    stick_to_point_pwm_y = 0; 
-    stick_to_point_pwm_o = 0;
-  }
+  // if(!Arrive_master){
+  //   stick_to_point_pwm_x = 0;
+  //   stick_to_point_pwm_y = 0; 
+  //   stick_to_point_pwm_o = 0;
+  // }
 
-  if(Arrive_master && !flag_missed_target || latch_flag) { //就不再进行holding了
-    stick_to_point_pwm_x = 0;
-    stick_to_point_pwm_y = 0;
-    stick_to_point_pwm_o = 0;     
-    latch_flag = true;
-    return 1;
-  }
-  else return 0;
+  // if(Arrive_master && !flag_missed_target || latch_flag) { //就不再进行holding了
+  //   stick_to_point_pwm_x = 0;
+  //   stick_to_point_pwm_y = 0;
+  //   stick_to_point_pwm_o = 0;     
+  //   latch_flag = true;
+  //   return 1;
+  // }
+  // else 
+  return 0;
 
 }
 
@@ -852,6 +845,21 @@ void OtterController::callback(const ros::TimerEvent& event)
 void OtterController::reverse_flag_Callback(const std_msgs::Bool& msg)
 {
   reverse_flag = msg.data;
+}
+
+void OtterController::reset_flag_Callback(const std_msgs::Bool& msg)
+{
+  reset_flag = msg.data;
+}
+void OtterController::reset(){
+  Arrive_master = false;
+  turn_off_guidance = false;
+  done_flag = false;
+  back_flag = false;
+  is_ok = false;
+  is_lock_ok = false;
+  count = 0;
+  start = 0;
 }
 
 void OtterController::get_control_param(){
