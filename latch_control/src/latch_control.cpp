@@ -5,7 +5,7 @@
 
 bool is_ok_a, is_ok_b, done;
 
-bool at9_control_1, at9_control_2, at9_control_3,reverse_flag;
+bool reverse_flag;
 
 void status_callback_a(const std_msgs::Bool msg){
     is_ok_a = msg.data;

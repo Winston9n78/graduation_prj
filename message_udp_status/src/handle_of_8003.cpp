@@ -37,6 +37,9 @@ void recieve_thread_function_8003(){
             std::cout << vStr[i] << std::endl;
             if(vStr[i] == "open") key = 1;
             if(vStr[i] == "close") key = 2;
+            if(vStr[i] == "reset") key = 3;
+            if(vStr[i] == "guidance") key = 4;
+            if(vStr[i] == "latch") key = 5;
             i+=1;
             double recv_data = std::stod(vStr[i]);
             std::cout << recv_data << std::endl;
@@ -44,7 +47,9 @@ void recieve_thread_function_8003(){
             {
                 case 1:ship_open = recv_data;/* code */break;
                 case 2:ship_close = recv_data;/* code */break;
-                case 3:commander_order_start.data = recv_data;/* code */break;
+                case 3:commander_order_reset.data = recv_data;/* code */break;
+                case 4:commander_order_guidance.data = recv_data;/* code */break;
+                case 5:commander_order_latch.data = recv_data;/* code */break;
                 default:
                 break;
             }

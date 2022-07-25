@@ -62,7 +62,7 @@ extern int len;
 
 extern bool recv_flag;
 extern int open_camera,close_camera,boat_reset;
-extern std_msgs::Bool commander_order_start,commander_order_reset;
+extern std_msgs::Bool commander_order_start,commander_order_reset,commander_order_guidance,commander_order_latch;
 
 extern std::string usv_status;
 

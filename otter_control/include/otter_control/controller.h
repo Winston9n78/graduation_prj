@@ -57,6 +57,8 @@ private:
   void keyboard_Callback(const std_msgs::Int32MultiArray& msg);
   void apriltag_Callback(const apriltags2_ros::AprilTagDetectionArray& msg);
 
+  void guidance_flag_Callback(const std_msgs::Bool& msg);
+  void latch_flag_Callback(const std_msgs::Bool& msg);
   void reverse_flag_Callback(const std_msgs::Bool& msg);
   void reset_flag_Callback(const std_msgs::Bool& msg);
   void reset();
@@ -169,7 +171,7 @@ private:
   bool is_ok = false, is_lock_ok = false;
   int start = 0, count = 0;
 
-  bool reverse_flag = false, reset_flag = false;
+  bool reverse_flag = false, reset_flag = false, guidance_flag = false, latch_flag = false;
   bool turn_off_guidance = false;
 
   //latch_control中的变量

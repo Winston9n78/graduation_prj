@@ -63,6 +63,10 @@ OtterController::OtterController() : T(3, 2)
 
   ros::Subscriber sub_reset_flag = 
       nh.subscribe("/commander_order_reset", 1, &OtterController::reset_flag_Callback, this);
+  ros::Subscriber sub_guidance_flag = 
+      nh.subscribe("/commander_order_guidance", 1, &OtterController::guidance_flag_Callback, this);
+  ros::Subscriber sub_latch_flag = 
+      nh.subscribe("/commander_order_latch", 1, &OtterController::latch_flag_Callback, this);
   // // Initialize thruster configuration matrix  初始化推进器控制的矩阵
   // T << 50, 50, 0, 0, -0.39 * 50, 0.39 * 50;
   tf::TransformListener listener;
@@ -115,18 +119,25 @@ OtterController::OtterController() : T(3, 2)
     //  std::cout << "角度输出：" << tauYaw << std::endl;
 
     // 到达的话就停下来保持航向，看到二维码的话这俩输出都是0
-    
-    if(!Arrive_master) tauSurge = 100;
-    else tauSurge = 0;//calculateSurgeForce(deltaTime, velocity);
-    tauYaw = calculateYawMoment(deltaTime, heading_angle, 0);
-    if(!flag_missed_target && !turn_off_guidance){
-      tauSurge = 0;
-      tauYaw = 0;
-      flag_missed_target = true;
+    if(guidance_flag){
+      if(!Arrive_master) tauSurge = 100;
+      else tauSurge = 0;//calculateSurgeForce(deltaTime, velocity);
+      if(!turn_off_guidance) tauYaw = calculateYawMoment(deltaTime, heading_angle, 0);
+      if(!flag_missed_target && !turn_off_guidance){
+        tauSurge = 0;
+        tauYaw = 0;
+        turn_off_guidance = true;
+      }
+
+      // 不开启导航则不需要判断
+      stick_to_point(); //仅用来判断是否到达目标点，被动船则需要进行动力定位
+      std::cout << "导航模式开启..." << std::endl;
     }
 
-    stick_to_point(); //仅用来判断是否到达目标点，被动船则需要进行动力定位
-    latching_algorithm();
+    if(latch_flag){ // 进行任务开始前，除了刚开机，其他时候必须复位再进行
+      latching_algorithm();
+      std::cout << "对接模式开启..." << std::endl;
+    }
 
     double left_output = output_dead + tauSurge - tauYaw  - connect_pwm_orientation + connect_pwm_x - stick_to_point_pwm_x - stick_to_point_pwm_o;
     double right_output = output_dead - tauSurge - tauYaw - connect_pwm_orientation - connect_pwm_x + stick_to_point_pwm_x - stick_to_point_pwm_o;
@@ -179,6 +190,7 @@ OtterController::OtterController() : T(3, 2)
 
     if(reset_flag){
       reset();
+      std::cout << "软件复位完成..." << std::endl;
     }
 
 
@@ -324,10 +336,10 @@ int OtterController::latching_algorithm(){
         
       }
     }
-    std::cout << "back_flag: " << back_flag << std::endl;
-    std::cout << "count: " << count << std::endl;
-    std::cout << "done_flag: " << done_flag << std::endl;
-    std::cout << "x_error_connect - x_offset_back: " << x_error_connect - x_offset_back << std::endl;
+    // std::cout << "back_flag: " << back_flag << std::endl;
+    // std::cout << "count: " << count << std::endl;
+    // std::cout << "done_flag: " << done_flag << std::endl;
+    // std::cout << "x_error_connect - x_offset_back: " << x_error_connect - x_offset_back << std::endl;
      
     if(done_flag){
       connect_pwm_y = 0;
@@ -846,6 +858,18 @@ void OtterController::reverse_flag_Callback(const std_msgs::Bool& msg)
 {
   reverse_flag = msg.data;
 }
+
+void OtterController::guidance_flag_Callback(const std_msgs::Bool& msg)
+{
+  guidance_flag = msg.data;
+}
+
+
+void OtterController::latch_flag_Callback(const std_msgs::Bool& msg)
+{
+  latch_flag = msg.data;
+}
+
 
 void OtterController::reset_flag_Callback(const std_msgs::Bool& msg)
 {

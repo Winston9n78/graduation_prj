@@ -39,6 +39,7 @@ namespace otter_coverage
     void path_set();
 
     void reset_flag_Callback(const std_msgs::Bool& msg);
+    void guidance_flag_Callback(const std_msgs::Bool& msg);
     void reset();
 
     std::vector<geometry_msgs::PoseStamped>::iterator iterator_path;
@@ -70,16 +71,17 @@ namespace otter_coverage
     double m_maxSpeedTurn;
     double m_minSpeed;
 
-    double x_0;
-    double y_0;
-    double x_1;
-    double y_1;
-    double heading_angle;
+    double x_0 = 0;
+    double y_0 = 0;
+    double x_1 = 0;
+    double y_1 = 0;
+    double heading_angle = 0;
 
     double m_path_[point_number];
 
-    bool reset_flag;
+    bool reset_flag = false, guidance_flag = false;
     int path_i = 0, path_j = 0;
+    double gold_point_x = 0, gold_point_y = 0;
 
     guidance::usv_pose usv_pose;
   };

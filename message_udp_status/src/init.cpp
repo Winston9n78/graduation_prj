@@ -11,7 +11,7 @@ void client_addr_init(struct sockaddr_in &sockaddr, int port){
   memset(&sockaddr, 0, sizeof(struct sockaddr_in));  //每个字节都用0填充
   sockaddr.sin_family = AF_INET;
   sockaddr.sin_port = htons(port);
-  inet_pton(AF_INET, "192.168.1.102", &sockaddr.sin_addr.s_addr);
+  inet_pton(AF_INET, "192.168.1.100", &sockaddr.sin_addr.s_addr);
 }
 
 void sock_fd_init(){

@@ -8,8 +8,8 @@ int len;
 
 bool recv_flag;
 
-ros::Publisher path_pub,commander_order_pub_start,commander_order_pub_reset;
-std_msgs::Bool commander_order_start,commander_order_reset;
+ros::Publisher path_pub,commander_order_pub_start,commander_order_pub_reset,commander_order_pub_guidance,commander_order_pub_latch;
+std_msgs::Bool commander_order_start,commander_order_reset,commander_order_guidance,commander_order_latch;
 
 std::string usv_status;
 
@@ -89,6 +89,12 @@ int main(int argc, char** argv)
   commander_order_pub_reset =
     nh.advertise<std_msgs::Bool>("/commander_order_reset", 10);
 
+  commander_order_pub_guidance =
+    nh.advertise<std_msgs::Bool>("/commander_order_guidance", 10);
+
+  commander_order_pub_latch =
+    nh.advertise<std_msgs::Bool>("/commander_order_latch", 10);
+
   sock_fd_init();
   serv_addr_init_all();
   client_addr_init_all();
@@ -112,8 +118,8 @@ int main(int argc, char** argv)
   std::thread recv_msg_8001(recieve_thread_function_8001); //测试通信
   // std::thread send_msg_8001(send_thread_function_8001);
 
-  // std::thread recv_msg_8002(recieve_thread_function_8002); // 发送本机程序状态
-  // std::thread send_msg_8002(send_thread_function_8002);
+  std::thread recv_msg_8002(recieve_thread_function_8002); // 发送本机程序状态
+  std::thread send_msg_8002(send_thread_function_8002);
 
   std::thread recv_msg_8003(recieve_thread_function_8003); // 接收open和close
   // std::thread send_msg_8003(send_thread_function_8003);
@@ -137,17 +143,17 @@ int main(int argc, char** argv)
   // std::thread send_msg_8009(send_thread_function_8009);
   // cv::startWindowThread();
   cv::namedWindow("view");
-  
 
   double frequency = 10.0;
   ros::Rate rate(frequency);
 
   while(nh.ok())
   {
-
     path_pub.publish(map_path);
     commander_order_pub_start.publish(commander_order_start);
     commander_order_pub_reset.publish(commander_order_reset);
+    commander_order_pub_guidance.publish(commander_order_guidance);
+    commander_order_pub_latch.publish(commander_order_latch);
     ros::spinOnce();
     rate.sleep();
   }
