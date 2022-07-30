@@ -36,7 +36,9 @@ Guidance::Guidance()
       nh.subscribe("/commander_order_reset", 1, &Guidance::reset_flag_Callback, this);  
   ros::Subscriber sub_guidance_flag = 
       nh.subscribe("/commander_order_guidance", 1, &Guidance::guidance_flag_Callback, this);
-  
+
+  ros::Subscriber sub_heading_angle = 
+      nh.subscribe("/heading_angle", 1, &Guidance::heading_angle_Callback, this);  
   //发布速度
   m_controllerPub =
       nh.advertise<std_msgs::Float64MultiArray>("speed_heading", 10);
@@ -48,8 +50,8 @@ Guidance::Guidance()
       nh.advertise<guidance::usv_pose>("usv/pose",10); 
 
   //订阅角度
-  ros::Subscriber sub =
-      nh.subscribe("/nlink_linktrack_anchorframe0", 1000, &Guidance::tagframe0Callback, this);
+  // ros::Subscriber sub =
+  //     nh.subscribe("/nlink_linktrack_anchorframe0", 1000, &Guidance::tagframe0Callback, this);
 
   // tf2_ros::Buffer tfBuffer;
   // tf2_ros::TransformListener tfListener(tfBuffer);
@@ -62,10 +64,10 @@ Guidance::Guidance()
     ros::param::get("/OtterController/path_point", str);
     // std::cout << str << std::endl;
     GetFloat(str, m_path);//路径点数变多时对应修改point_num, 在stof中
-    // std::cout << m_path[0] << std::endl;
-    // std::cout << m_path[1] << std::endl;
-    // std::cout << m_path[2] << std::endl;
-    // std::cout << m_path[3] << std::endl;
+    std::cout << m_path[0] << std::endl;
+    std::cout << m_path[1] << std::endl;
+    std::cout << m_path[2] << std::endl;
+    std::cout << m_path[3] << std::endl;
     /*
       在这里订阅UBW进行计算，替换上面三个角度
     */
@@ -75,7 +77,7 @@ Guidance::Guidance()
 
     // double distance = dist(x_0, y_0, (it+1)->pose.position.x, (it+1)->pose.position.y);
     
-    if(guidance_flag){ //guidance的开关
+    if(1){ //guidance_flag guidance的开关
       /*****************rqt设置下*********************/
       // static int path_i = 0;
       if(dist(x_0, y_0, m_path[path_i+2], m_path[path_i+3]) < 0.5){
@@ -87,24 +89,24 @@ Guidance::Guidance()
         //循环运行可以在这里改逻辑
       }
       // 将最终目标点坐标publish
-      // geometry_msgs::PoseStamped goal_point_;
-      // goal_point_.pose.position.x = m_path[point_number - 2];
-      // goal_point_.pose.position.y = m_path[point_number - 1];
-      // goal_point_pub.publish(goal_point_);
-      // followPath(x_0, y_0, heading_angle, m_path[path_i+0], m_path[path_i+1], m_path[path_i+2], m_path[path_i+3]);
-      // std::cout << "B going......" << std::endl;
-      /*****************上位机设置下*********************/
-      static int path_j;
-      if(dist(x_0, y_0, map_path[path_j+2], map_path[path_j+3] < 0.5)){
-        if(path_j != (map_path_size - 4)) path_j+=2;
-        else u = 0;
-      }
       geometry_msgs::PoseStamped goal_point_;
-      goal_point_.pose.position.x = gold_point_x;
-      goal_point_.pose.position.y = gold_point_y;
+      goal_point_.pose.position.x = m_path[point_number - 2];
+      goal_point_.pose.position.y = m_path[point_number - 1];
       goal_point_pub.publish(goal_point_);
-      followPath(x_0, y_0, heading_angle, m_path[path_j+0], m_path[path_j+1], m_path[path_j+2], m_path[path_j+3]);
+      followPath(x_0, y_0, heading_angle, m_path[path_i+0], m_path[path_i+1], m_path[path_i+2], m_path[path_i+3]);
       std::cout << "B going......" << std::endl;
+      /*****************上位机设置下*********************/
+      // static int path_j;
+      // if(dist(x_0, y_0, map_path[path_j+2], map_path[path_j+3] < 0.5)){
+      //   if(path_j != (map_path_size - 4)) path_j+=2;
+      //   else u = 0;
+      // }
+      // geometry_msgs::PoseStamped goal_point_;
+      // goal_point_.pose.position.x = gold_point_x;
+      // goal_point_.pose.position.y = gold_point_y;
+      // goal_point_pub.publish(goal_point_);
+      // followPath(x_0, y_0, heading_angle, m_path[path_j+0], m_path[path_j+1], m_path[path_j+2], m_path[path_j+3]);
+      // std::cout << "B going......" << std::endl;
     }
       // std::cout << "x0 = " << m_path[i+0] << ", y0 = " << m_path[i+1] << std::endl;
       // std::cout << "x1 = " << m_path[i+2] << ", y1 = " << m_path[i+3] << std::endl;
@@ -153,18 +155,26 @@ void Guidance::reset(){
   path_j = 0;
 }
 
-void Guidance::tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg){
+void Guidance::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &msg){
 
-  x_0 = msg.nodes[0].pos_3d[0];
-  y_0 = msg.nodes[0].pos_3d[1];
-  x_1 = msg.nodes[1].pos_3d[0];
-  y_1 = msg.nodes[1].pos_3d[1];
+  if(msg.id == 0){
+    y_0 = msg.pos_3d[1];
+    x_0 = msg.pos_3d[0];
+  }
+  else{
+    y_1 = msg.pos_3d[1];
+    x_1 = msg.pos_3d[0];
+  }
 
-  double delta_y = msg.nodes[0].pos_3d[1] - msg.nodes[1].pos_3d[1];
-  double delta_x = msg.nodes[0].pos_3d[0] - msg.nodes[1].pos_3d[0];
+  x_0 = (x_0 + x_1) / 2;
+  y_0 = (y_0 + y_1) / 2;
 
-  heading_angle = (atan2(delta_y, delta_x) / 3.14) * 180;
+  // heading_angle = (atan2(delta_y, delta_x) / 3.14) * 180;
 
+}
+
+void Guidance::heading_angle_Callback(const std_msgs::Float32& msg){
+  heading_angle = msg.data;
 }
 
 void Guidance::path_callback(const std_msgs::Float32MultiArray& msg){
@@ -174,7 +184,7 @@ void Guidance::path_callback(const std_msgs::Float32MultiArray& msg){
     map_path[i] = msg.data[i];
   }
   gold_point_x = map_path[msg.data.size() - 2];
-  gold_point_y = map_path[msg.data.size() - 3];
+  gold_point_y = map_path[msg.data.size() - 1];
 
 }
 

@@ -37,13 +37,15 @@
   <!-- <node name="linktrack_node" pkg="nlink_example" type="linktrack_example" output="screen"/> -->
 
   <!-- Guidance node -->
-  <node name="guidance_node" pkg="guidance" type="guidance_node" output="screen" />
+  
   <!-- <node name="guidance_node" pkg="guidance" type="pose_tf_usv" output="screen"/> -->
 
-  <node name="otter_control_node" pkg="otter_control" type="controller" output="screen"/>
+  <node name="OtterController" pkg="otter_control" type="controller" output="screen"/>
+  <node name="latch_control_node" pkg="latch_control" type="latch_control" output="screen"/>
   <node name="message_udp_latch_node" pkg="message_udp_latch" type="message_udp_latch" output="screen"/>
   <node name="message_udp_status_node" pkg="message_udp_status" type="message_udp_status" output="screen"/>
 
+  <node name="guidance_node" pkg="guidance" type="guidance_node" output="screen" />
   <!-- <node name="otter_parameter_node" pkg="otter_control" type="param_set" output="screen"/> -->
   <!--需要加一个guidance节点计算LOS需要的参数-->
   <!--需要加一个controler节点计算推进器的参数

@@ -1,6 +1,6 @@
 #include "message_udp_status/message_udp_status.h"
 
-float usv_x = 0.1, usv_y = 0.12345, usv_orien = 0.123456;
+float usv_x = 0, usv_y = 0, usv_orien = 0;
 int is_ok = 0;
 int is_ok_from_a = 0; // 将接收到的另一艘船的解码的变量
 
@@ -19,9 +19,9 @@ std::vector<uchar> buf_origin;
 cv::Mat decode_img, encode_img;
 
 void usv_status_callback(const otter_control::usv_status msg){
-    usv_x = msg.position_z;
-    usv_y = msg.position_x;
-    usv_orien = msg.orientation_pitch;
+    usv_x = msg.position_x;
+    usv_y = msg.position_y;
+    usv_orien = msg.position_z;
 }
 
 unsigned char *encodeImg;
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
   // std::thread recv_msg_8009(recieve_thread_function_8009); //多出来
   // std::thread send_msg_8009(send_thread_function_8009);
   // cv::startWindowThread();
-  cv::namedWindow("view");
+  // cv::namedWindow("view");
 
   double frequency = 10.0;
   ros::Rate rate(frequency);

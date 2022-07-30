@@ -58,7 +58,7 @@ int main(int argc, char** argv){
 
         if(is_ok_b && !done){ // 勾住 (is_ok_a||is_ok_b) && !done
             count++;
-
+            // std::cout << "钩闭合" << std::endl;
             control_cmd.data[a] = 1;/*勾住流程电平还不确定的，这里暂时示范*/
 
             if(count > 80){

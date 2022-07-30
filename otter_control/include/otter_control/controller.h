@@ -133,8 +133,8 @@ private:
   float linear_acc_y = 0;
   float linear_acc_z = 0;
 
-  float output_max = 1700;
-  float output_min = 1300;
+  float output_max = 1800;
+  float output_min = 1200;
   float output_dead = 1500;
 
   double camera_x = 0, camera_y = 0, camera_z = 0, camera_fi = 0;
@@ -170,6 +170,7 @@ private:
 
   bool is_ok = false, is_lock_ok = false;
   int start = 0, count = 0;
+  int count_dist = 0, done_dist = 0;
 
   bool reverse_flag = false, reset_flag = false, guidance_flag = false, latch_flag = false;
   bool turn_off_guidance = false;

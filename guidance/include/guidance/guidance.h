@@ -9,7 +9,7 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Bool.h>
 #include "guidance/usv_pose.h"
-#include <nlink_parser/LinktrackAnchorframe0.h>
+#include <nlink_parser/LinktrackTagframe0.h>
 #include "stof/stof.h"
 #include <string.h>
 
@@ -34,7 +34,8 @@ namespace otter_coverage
     void set_v_callback(const std_msgs::Float32& msg);
     void path_callback(const std_msgs::Float32MultiArray& msg);
 
-    void tagframe0Callback(const nlink_parser::LinktrackAnchorframe0 &msg);
+    void tagframe0Callback(const nlink_parser::LinktrackTagframe0 &msg);
+    void heading_angle_Callback(const std_msgs::Float32& msg);
 
     void path_set();
 

@@ -41,8 +41,8 @@ void recieve_thread_function_8006(){
 
     frame = cv::imdecode(decode, CV_LOAD_IMAGE_COLOR);
 
-    cv::imshow("view", frame);
-    cv::waitKey(10);
+    // cv::imshow("view", frame);
+    // cv::waitKey(10);
 
     // recv_buf_8006[recv_num] = '\0';
     // std::cout<<"server receive " << recv_num_8006 << " bytes: " << recv_buf_8006 << std::endl;
