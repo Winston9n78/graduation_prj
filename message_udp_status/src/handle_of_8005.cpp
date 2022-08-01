@@ -33,32 +33,32 @@ void recieve_thread_function_8005(){
 void send_thread_function_8005(){
     while(1){
 
-        send_num_8005 = sendto(sock_fd_8005, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client_8005, len);
-        if(send_num_8005 < 0)
-        {
-            perror("sendto error:");
+      send_num_8005 = sendto(sock_fd_8005, usv_status.c_str(), usv_status.size(), 0, (struct sockaddr *)&addr_client_8005, len);
+      if(send_num_8005 < 0)
+      {
+          perror("sendto error:");
             exit(1);
-        }
+      }
 
-    std::stringstream ss;
-    usv_status = "x:";
+    // std::stringstream ss;
+    // usv_status = "x1:";
 
-    /****把姿态以一定格式发送出去****/
-    ss <<  usv_x;
-    std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
-    usv_status += asString;
+    // /****把姿态以一定格式发送出去****/
+    // ss <<  usv_x;
+    // std::string asString = ss.str();// x:0.1,y:0.12345,o:0.123456789
+    // usv_status += asString;
 
-    ss.str("");
-    usv_status += ",y:";
-    ss << usv_y;
-    asString = ss.str();
-    usv_status += asString;
+    // ss.str("");
+    // usv_status += ",y1:";
+    // ss << usv_y;
+    // asString = ss.str();
+    // usv_status += asString;
 
-    ss.str("");
-    usv_status += ",orien:";
-    ss << usv_orien;
-    asString = ss.str();
-    usv_status += asString;
+    // ss.str("");
+    // usv_status += ",theta1:";
+    // ss << usv_orien;
+    // asString = ss.str();
+    // usv_status += asString;
     /***把姿态以一定格式发送出去****/
         
 

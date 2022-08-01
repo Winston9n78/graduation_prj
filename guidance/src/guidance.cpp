@@ -50,8 +50,8 @@ Guidance::Guidance()
       nh.advertise<guidance::usv_pose>("usv/pose",10); 
 
   //订阅角度
-  // ros::Subscriber sub =
-  //     nh.subscribe("/nlink_linktrack_anchorframe0", 1000, &Guidance::tagframe0Callback, this);
+  ros::Subscriber sub =
+      nh.subscribe("/nlink_linktrack_tagframe0", 100, &Guidance::tagframe0Callback, this);
 
   // tf2_ros::Buffer tfBuffer;
   // tf2_ros::TransformListener tfListener(tfBuffer);
@@ -64,10 +64,12 @@ Guidance::Guidance()
     ros::param::get("/OtterController/path_point", str);
     // std::cout << str << std::endl;
     GetFloat(str, m_path);//路径点数变多时对应修改point_num, 在stof中
-    std::cout << m_path[0] << std::endl;
-    std::cout << m_path[1] << std::endl;
-    std::cout << m_path[2] << std::endl;
-    std::cout << m_path[3] << std::endl;
+    // std::cout << m_path[0] << std::endl;
+    // std::cout << m_path[1] << std::endl;
+    // std::cout << m_path[2] << std::endl;
+    // std::cout << m_path[3] << std::endl;
+    std::cout << "x0: " << x_0 << std::endl;
+    std::cout << "y0: " << y_0 << std::endl;
     /*
       在这里订阅UBW进行计算，替换上面三个角度
     */
@@ -77,43 +79,39 @@ Guidance::Guidance()
 
     // double distance = dist(x_0, y_0, (it+1)->pose.position.x, (it+1)->pose.position.y);
     
-    if(1){ //guidance_flag guidance的开关
+    if(guidance_flag){ //guidance_flag guidance的开关
       /*****************rqt设置下*********************/
       // static int path_i = 0;
-      if(dist(x_0, y_0, m_path[path_i+2], m_path[path_i+3]) < 0.5){
-        if(path_i != (point_number-4)) path_i+=2;
-        else{
-          u = 0;//停船，这个u是期望速度，并且会发布出去
-          // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
-        }
-        //循环运行可以在这里改逻辑
-      }
-      // 将最终目标点坐标publish
-      geometry_msgs::PoseStamped goal_point_;
-      goal_point_.pose.position.x = m_path[point_number - 2];
-      goal_point_.pose.position.y = m_path[point_number - 1];
-      goal_point_pub.publish(goal_point_);
-      followPath(x_0, y_0, heading_angle, m_path[path_i+0], m_path[path_i+1], m_path[path_i+2], m_path[path_i+3]);
-      std::cout << "B going......" << std::endl;
-      /*****************上位机设置下*********************/
-      // static int path_j;
-      // if(dist(x_0, y_0, map_path[path_j+2], map_path[path_j+3] < 0.5)){
-      //   if(path_j != (map_path_size - 4)) path_j+=2;
-      //   else u = 0;
+      // if(dist(x_0, y_0, m_path[path_i+2], m_path[path_i+3]) < 0.5){
+      //   if(path_i != (point_number-4)) path_i+=2;
+      //   else{
+      //     u = 0;//停船，这个u是期望速度，并且会发布出去
+      //     // i = 0;//循环航行 如果不需要循环直接注释掉即可。船的航向角就会沿着最后的路线的角度。
+      //   }
+      //   //循环运行可以在这里改逻辑
       // }
+      // // 将最终目标点坐标publish
       // geometry_msgs::PoseStamped goal_point_;
-      // goal_point_.pose.position.x = gold_point_x;
-      // goal_point_.pose.position.y = gold_point_y;
+      // goal_point_.pose.position.x = m_path[point_number - 2];
+      // goal_point_.pose.position.y = m_path[point_number - 1];
       // goal_point_pub.publish(goal_point_);
-      // followPath(x_0, y_0, heading_angle, m_path[path_j+0], m_path[path_j+1], m_path[path_j+2], m_path[path_j+3]);
+      // followPath(x_0, y_0, heading_angle, m_path[path_i+0], m_path[path_i+1], m_path[path_i+2], m_path[path_i+3]);
       // std::cout << "B going......" << std::endl;
+      /*****************上位机设置下*********************/
+      static int path_j;
+      if(dist(x_0, y_0, map_path[path_j+2], map_path[path_j+3] < 0.5)){
+        if(path_j != (map_path_size - 4)) path_j+=2;
+        else u = 0;
+      }
+      geometry_msgs::PoseStamped goal_point_;
+      goal_point_.pose.position.x = gold_point_x;
+      goal_point_.pose.position.y = gold_point_y;
+      goal_point_pub.publish(goal_point_);
+      followPath(x_0, y_0, heading_angle, m_path[path_j+0], m_path[path_j+1], m_path[path_j+2], m_path[path_j+3]);
+      std::cout << "B going......" << std::endl;
     }
       // std::cout << "x0 = " << m_path[i+0] << ", y0 = " << m_path[i+1] << std::endl;
       // std::cout << "x1 = " << m_path[i+2] << ", y1 = " << m_path[i+3] << std::endl;
-
-
-    
-    
 
     //发布两个点的坐标到tf坐标系中，可以在rviz中显示
     usv_pose.x = x_0;
@@ -170,7 +168,6 @@ void Guidance::tagframe0Callback(const nlink_parser::LinktrackTagframe0 &msg){
   y_0 = (y_0 + y_1) / 2;
 
   // heading_angle = (atan2(delta_y, delta_x) / 3.14) * 180;
-
 }
 
 void Guidance::heading_angle_Callback(const std_msgs::Float32& msg){
@@ -261,7 +258,7 @@ void Guidance::followPath(double x, double y, double psi, double x_start, double
                (y_goal - y) * std::cos(gamma_p);
 
   // // Time-varying lookahead distance 时变前看距离 ,论文用的是船的长度的2-5倍
-  double delta_y_e = 2 * 0.8;//根据地图大小给，在实验室模拟可以用小的
+  double delta_y_e = 3 * 1.2;//根据地图大小给，在实验室模拟可以用小的
   // double delta_y_e =
   //     (delta_max - delta_min) * std::exp(-delta_k * std::pow(y_e, 2)) +
   //     delta_min;

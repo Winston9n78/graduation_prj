@@ -137,16 +137,16 @@ OtterController::OtterController() : T(3, 2)
       tauYaw = 0;
     }
 
-    if(1){ // latch_flag 进行任务开始前，除了刚开机，其他时候必须复位再进行
+    if(latch_flag){ // latch_flag 进行任务开始前，除了刚开机，其他时候必须复位再进行
       
       if(guidance_flag){
         if(Arrive_master)
           latching_algorithm();
-          std::cout << "latch..." << std::endl;
+          std::cout << "latch with guidance..." << std::endl;
       }
       else{
         latching_algorithm();
-        std::cout << "latch..." << std::endl;
+        std::cout << "latch only..." << std::endl;
       }
       
     }
@@ -265,7 +265,7 @@ int OtterController::latching_algorithm(){
 
   // static bool prepared_flag = 0, done_flag = 0, back_flag = 0;
   double x_offset = 1.36, x_offset_back = 1.8;
-  double y_offset = 0.015;
+  double y_offset = 0.02;
   double o_offset = 3.25;
   if(reverse_flag){
     x_offset = 1.38;
@@ -344,7 +344,7 @@ int OtterController::latching_algorithm(){
         start = 1; /*开始计时*/
       }
 
-      if(is_lock_ok && back_flag && count > 30){ //大于3秒才开始判断，判断的同时一直在后退
+      if(is_lock_ok && back_flag && count > 50){ //大于3秒才开始判断，判断的同时一直在后退
         if((x_error_connect - x_offset) < 0.08 && (x_error_connect - x_offset) > -0.08){ //3秒距离拉开不超过这个点
           done_flag = 1;/*退出对接程序*/
         }
@@ -352,7 +352,7 @@ int OtterController::latching_algorithm(){
         else if((x_error_connect - x_offset_back) < 0.08 && (x_error_connect - x_offset_back) > -0.08){ 
           
           is_ok = 0; /*锁打开*/
-          if(count > 110){
+          if(count > 130){
             back_flag = 0; /*后退标志位置0*/
             start = 0; /*关闭计时*/
             count = 0; /*清空计数*/
@@ -571,6 +571,7 @@ int OtterController::stick_to_point(){
   //   latch_flag = false;
   // }
   if(!done_dist) count_dist++;
+  if(count_dist > 200) count_dist = 200;
   if(!Arrive_master && dist < radius && count_dist > 100){ //if(dist < radius)
     Arrive_master = true;
     // angle_hold = angle_z;
@@ -903,8 +904,11 @@ void OtterController::reset_flag_Callback(const std_msgs::Bool& msg)
 {
   reset_flag = msg.data;
 }
+
 void OtterController::reset(){
   Arrive_master = false;
+  guidance_flag = false;
+  latch_flag = false;
   turn_off_guidance = false;
   done_flag = false;
   back_flag = false;

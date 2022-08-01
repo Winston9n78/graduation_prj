@@ -8,6 +8,8 @@ int len;
 
 bool recv_flag;
 
+float dvl_v_x,dvl_v_y,imu_yaw;
+
 ros::Publisher path_pub,commander_order_pub_start,commander_order_pub_reset,commander_order_pub_guidance,commander_order_pub_latch;
 std_msgs::Bool commander_order_start,commander_order_reset,commander_order_guidance,commander_order_latch;
 
@@ -22,6 +24,15 @@ void usv_status_callback(const otter_control::usv_status msg){
     usv_x = msg.position_x;
     usv_y = msg.position_y;
     usv_orien = msg.position_z;
+}
+
+void imu_callback(const sensor_msgs::Imu& msg){
+  imu_yaw = msg.orientation.z;
+}
+
+void dvl_callback(const std_msgs::Float64MultiArray& msg){
+  dvl_v_x = msg.data[2];
+  dvl_v_y = msg.data[3];
 }
 
 unsigned char *encodeImg;
@@ -79,6 +90,10 @@ int main(int argc, char** argv)
   ros::Subscriber status_sub = nh.subscribe("usv_status", 1, &usv_status_callback);
   printf("111\n");
   ros::Subscriber image_sub = nh.subscribe("/d400/color/image_raw/compressed", 1, &image_callback);
+
+  ros::Subscriber dvl_sub = nh.subscribe("dvl_a50", 1, &dvl_callback);
+  ros::Subscriber imu_sub = nh.subscribe("imu_data", 1, &imu_callback);
+
   printf("222\n");
   path_pub =
     nh.advertise<std_msgs::Float32MultiArray>("/map_path", 10);
@@ -128,7 +143,7 @@ int main(int argc, char** argv)
   std::thread send_msg_8004(send_thread_function_8004); // 发送本船状态
 
   // std::thread recv_msg_8005(recieve_thread_function_8005); // 同上，被动船用
-  // std::thread send_msg_8005(send_thread_function_8005);
+  std::thread send_msg_8005(send_thread_function_8005);
 
   // std::thread recv_msg_8006(recieve_thread_function_8006); // 主动船摄像头图像发送用
   std::thread send_msg_8006(send_thread_function_8006);
@@ -150,6 +165,11 @@ int main(int argc, char** argv)
   while(nh.ok())
   {
     path_pub.publish(map_path);
+
+    if(commander_order_reset.data == true){
+      commander_order_guidance.data = false;
+      commander_order_latch.data = false;
+    }
     commander_order_pub_start.publish(commander_order_start);
     commander_order_pub_reset.publish(commander_order_reset);
     commander_order_pub_guidance.publish(commander_order_guidance);

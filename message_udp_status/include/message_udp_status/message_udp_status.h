@@ -19,7 +19,9 @@
 #include "ros/ros.h"
 #include "std_msgs/Float32.h"
 #include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Bool.h"
+#include "sensor_msgs/Imu.h"
 #include <otter_control/usv_status.h>
 
 #include <boost/algorithm/string/split.hpp>
@@ -103,6 +105,7 @@ extern struct sockaddr_in addr_serv_8009;
 extern struct sockaddr_in addr_client_8009, addr_client_8009_;
 
 extern float usv_x, usv_y, usv_orien;
+extern float dvl_v_x,dvl_v_y,imu_yaw;
 
 extern std_msgs::Float32MultiArray map_path;
 

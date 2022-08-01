@@ -103,6 +103,11 @@ def talker():
 #反向out:01 0F 00 00 00 10 02 0A 00 E4 80
 #反向back:01 0F 00 00 00 10 02 05 00 E1 70
 
+#支腿动作
+#out 01 0F 00 00 00 10 02 00 55 22 1F
+#back 01 0F 00 00 00 10 02 00 AA 62 5F
+#STOP 01 0F 00 00 00 10 02 00 00 E2 20
+
     rate = rospy.Rate(10) # 10hz
 
     while not rospy.is_shutdown():

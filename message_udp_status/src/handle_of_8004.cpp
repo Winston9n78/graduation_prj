@@ -42,7 +42,7 @@ void send_thread_function_8004(){
       }
           
       std::stringstream ss;
-      usv_status = "x:";
+      usv_status = "x1:";
 
       /****把姿态以一定格式发送出去****/
       ss <<  usv_x;
@@ -50,13 +50,13 @@ void send_thread_function_8004(){
       usv_status += asString;
 
       ss.str("");
-      usv_status += ",y:";
+      usv_status += ",y1:";
       ss << usv_y;
       asString = ss.str();
       usv_status += asString;
 
       ss.str("");
-      usv_status += ",theta:";
+      usv_status += ",theta1:";
       ss << usv_orien;
       asString = ss.str();
       usv_status += asString;

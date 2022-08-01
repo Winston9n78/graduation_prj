@@ -14,7 +14,6 @@ if __name__=="__main__":
     rospy.init_node('dvl_a50_node', anonymous=True)
     pub_dvl = rospy.Publisher('dvl_a50', Float64MultiArray, queue_size=1)
 
-
     now = time.time() 
     latest_time = time.time() 
     xx=0
